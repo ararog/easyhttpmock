@@ -1553,6 +1553,8 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 [[package]]
 name = "vetis"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44971863b42ad99c5576b92e40f4195170e4f8cd4034c873b6cfa288b5ce2348"
 dependencies = [
  "bytes",
  "futures-rustls",
