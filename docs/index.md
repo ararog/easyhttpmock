@@ -9,8 +9,8 @@ permalink: /
 <h1><b>EasyHttpMock</b></h1>
 </div>
 
-[![crates.io](https://img.shields.io/crates/v/easyhttpmock?style=flat-square)](https://crates.io/crates/easyhttpmock) 
-[![Build Status](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml) 
+[![crates.io](https://img.shields.io/crates/v/easyhttpmock?style=flat-square)](https://crates.io/crates/easyhttpmock)
+[![Build Status](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml)
 [![Documentation](https://docs.rs/easyhttpmock/badge.svg)](https://docs.rs/easyhttpmock/latest/easyhttpmock)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -37,29 +37,78 @@ easyhttpmock = { version = "0.0.9" }
 Basic usage:
 
 ```rust
-use deboa::{Client, request::get, Result};
-use deboa_extras::http::serde::json::JsonBody;
-use serde::Deserialize;
+use bytes::Bytes;
+use http::StatusCode;
+use http_body_util::Full;
+use hyper::Response;
 
-#[derive(Deserialize)]
-struct Post {
-    id: u64,
-    title: String,
-    body: String,
-}
+use easyhttpmock::{
+    config::EasyHttpMockConfig,
+    server::{adapters::vetis_adapter::VetisServerAdapter, PortGenerator},
+    EasyHttpMock,
+};
+
+use deboa::{cert::ContentEncoding, request::DeboaRequest, Client};
+
+use vetis::{
+    server::{
+        config::{SecurityConfig, ServerConfig},
+    },
+};
+
+pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
+pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
+
+pub const SERVER_CERT: &[u8] = include_bytes!("../certs/server.der");
+pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    let client = Client::new();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let tls_config = SecurityConfig::builder()
+        .cert(SERVER_CERT.to_vec())
+        .key(SERVER_KEY.to_vec())
+        .build();
+
+    let vetis_config = ServerConfig::builder()
+        .security(tls_config)
+        .with_random_port()
+        .build();
+
+    let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+        .server_config(vetis_config)
+        .build();
+
+    let mut server = EasyHttpMock::new(config);
+    #[allow(unused_must_use)]
+    let result = server
+        .start(|_| async move {
+            Ok(Response::new(Full::new(Bytes::from("Hello World"))))
+        })
+        .await;
+
+    result.unwrap_or_else(|err| {
+        panic!("Failed to start mock server: {}", err);
+    });
+
+    let client = Client::builder()
+        .certificate(deboa::cert::Certificate::from_slice(CA_CERT, ContentEncoding::DER))
+        .build();
+
+    let request = DeboaRequest::get(server.url("/anything"))?.build()?;
+
+    let response = client
+        .execute(request)
+        .await?;
+
+    if response.status() == StatusCode::OK {
+        println!("Request executed successfully");
+    }
+
+    server
+        .stop()
+        .await?;
     
-    let posts: Vec<Post> = get("https://jsonplaceholder.typicode.com/posts")
-        .send_with(&client)
-        .await?
-        .body_as(JsonBody, Post)?;
-    
-    println!("First post: {}", posts[0].title);
     Ok(())
-}
 ```
 
 ## Examples
