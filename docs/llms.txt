@@ -1,0 +1,57 @@
+# easyhttpmock
+
+**EasyHttpMock** is a straightforward, non opinionated, developer-centric HTTP client library for Rust. It offers a rich array of modern features—from flexible authentication and serialization formats to runtime compatibility and middleware support—while maintaining simplicity and ease of use. It’s especially well-suited for Rust projects that require a lightweight, efficient HTTP client without sacrificing control or extensibility.
+
+## Installation
+
+```toml
+[dependencies]
+easyhttpmock = { version = "0.0.1", features = ["http1", "tokio-rt", "tokio-rust-tls"] }
+```
+
+## 💡 Usage Example
+
+```rust
+use easyhttpmock::EasyHttpMock;
+use http::{Request, Response};
+use http_body_util::Full;
+use bytes::Bytes;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a mock server
+    let mock_server = EasyHttpMock::new()
+        .port(8080)
+        .mock_endpoint("/api/users", |req| {
+            // Mock response for user endpoint
+            Response::builder()
+                .status(200)
+                .body(Full::new(Bytes::from(r#"{"users": [{"id": 1, "name": "Alice"}]}"#)))
+                .unwrap()
+        })
+        .start()
+        .await?;
+
+    // Your HTTP client can now test against the mock endpoint
+    let client = reqwest::Client::new();
+    let response = client.get("http://localhost:8080/api/users").send().await?;
+    
+    println!("Mock response: {}", response.text().await?);
+
+    mock_server.stop().await?;
+    Ok(())
+}
+```
+
+## Features
+
+- **🎯 Testing-Focused**: Purpose-built for HTTP client testing scenarios
+- **⚡ Lightning Fast**: Powered by VeTiS for optimal performance
+- **🔧 Flexible Runtime**: Choose between Tokio or Smol async runtimes
+- **🌐 Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
+- **🛡️ Secure Testing**: Built-in TLS support for HTTPS endpoint testing
+- **📦 Minimal Dependencies**: Lightweight footprint for your test suite
+
+## Blog Posts
+
+- Coming soon
