@@ -1,19 +1,19 @@
 # EasyHttpMock
 
-🧪 **The effortless HTTP mock server for seamless API testing**
+**The effortless HTTP mock server for seamless API testing**
 
 **EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. Built on top of [VeTiS](https://github.com/ararog/vetis), it provides a clean, intuitive API for creating realistic mock endpoints that simulate real-world API behavior, making your testing workflow faster and more reliable.
 
-## ✨ Why EasyHttpMock?
+## Why EasyHttpMock?
 
-- **🎯 Testing-Focused**: Purpose-built for HTTP client testing scenarios
-- **⚡ Lightning Fast**: Powered by VeTiS for optimal performance
-- **🔧 Flexible Runtime**: Choose between Tokio or Smol async runtimes
-- **🌐 Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
-- **🛡️ Secure Testing**: Built-in TLS support for HTTPS endpoint testing
-- **📦 Minimal Dependencies**: Lightweight footprint for your test suite
+- **Testing-Focused**: Purpose-built for HTTP client testing scenarios
+- **Lightning Fast**: Powered by VeTiS for optimal performance
+- **Flexible Runtime**: Choose between Tokio or Smol async runtimes
+- **Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
+- **Secure Testing**: Built-in TLS support for HTTPS endpoint testing
+- **Minimal Dependencies**: Lightweight footprint for your test suite
 
-## 🛠️ Quick Start
+## Quick Start
 
 Add EasyHttpMock to your `Cargo.toml`:
 
@@ -21,7 +21,7 @@ Add EasyHttpMock to your `Cargo.toml`:
 easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http2", "tokio-rust-tls"] }
 ```
 
-## 💡 Usage Example
+## Usage Example
 
 Here's how simple it is to create a mock HTTP server for testing:
 
@@ -101,20 +101,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## 🎯 Perfect For
+## Perfect For
 
-- **🧪 Unit Testing**: Mock external APIs in your test suite
-- **🔄 Integration Testing**: Test HTTP client behavior without real services
-- **📊 Load Testing**: Simulate API responses under various conditions
-- **🐛 Debugging**: Reproduce API issues in a controlled environment
-- **📚 Documentation**: Create interactive API examples
+- **Unit Testing**: Mock external APIs in your test suite
+- **Integration Testing**: Test HTTP client behavior without real services
+- **Load Testing**: Simulate API responses under various conditions
+- **Debugging**: Reproduce API issues in a controlled environment
+- **Documentation**: Create interactive API examples
 
-## ⚙️ Supported Runtimes
+## Supported Runtimes
 
 - [tokio](https://github.com/tokio-rs/tokio) - High-performance async runtime
 - [smol](https://github.com/smol-rs/smol) - Lightweight async runtime
 
-## 🔧 Crate Features
+## Crate Features
 
 - **tokio-rt** (default) - Tokio runtime support
 - **smol-rt** - Smol runtime support  
@@ -124,10 +124,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **tokio-rust-tls** (default) - TLS support for Tokio
 - **smol-rust-tls** - TLS support for Smol
 
-## 📄 License
+## License
 
 MIT
 
-## 👤 Author
+## Author
 
 Rogerio Pereira Araujo <rogerio.araujo@gmail.com>
