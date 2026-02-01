@@ -18,12 +18,12 @@ permalink: /
 
 ## Features
 
-- **🎯 Testing-Focused**: Purpose-built for HTTP client testing scenarios
-- **⚡ Lightning Fast**: Powered by VeTiS for optimal performance
-- **🔧 Flexible Runtime**: Choose between Tokio or Smol async runtimes
-- **🌐 Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
-- **🛡️ Secure Testing**: Built-in TLS support for HTTPS endpoint testing
-- **📦 Minimal Dependencies**: Lightweight footprint for your test suite
+- **Testing-Focused**: Purpose-built for HTTP client testing scenarios
+- **Lightning Fast**: Powered by VeTiS for optimal performance
+- **Flexible Runtime**: Choose between Tokio or Smol async runtimes
+- **Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
+- **Secure Testing**: Built-in TLS support for HTTPS endpoint testing
+- **Minimal Dependencies**: Lightweight footprint for your test suite
 
 ## Quick Start
 
