@@ -4,8 +4,8 @@ use crate::{config::EasyHttpMockConfig, errors::EasyHttpMockError, server::Serve
 
 use bytes::Bytes;
 use http::StatusCode;
-use http_body_util::Full;
-use vetis::{server::errors::VetisError, RequestType, ResponseType};
+use http_body_util::{Either, Full};
+use vetis::{errors::VetisError, Request, Response};
 
 pub mod config;
 pub mod errors;
@@ -22,13 +22,14 @@ where
 }
 
 impl<S: ServerAdapter> EasyHttpMock<S> {
-    pub fn new(config: EasyHttpMockConfig<S>) -> EasyHttpMock<S> {
+    pub fn new(config: EasyHttpMockConfig<S>) -> Result<EasyHttpMock<S>, EasyHttpMockError> {
         let server = S::new(
             config
                 .server_config
                 .clone(),
-        );
-        EasyHttpMock { config, server }
+        )?;
+
+        Ok(EasyHttpMock { config, server })
     }
 
     pub fn url(&self, path: &str) -> String {
@@ -51,8 +52,8 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
 
     pub async fn start<H, Fut>(&mut self, handler: H) -> Result<(), EasyHttpMockError>
     where
-        H: Fn(RequestType) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<ResponseType, VetisError>> + Send + 'static,
+        H: Fn(Request) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<Response, VetisError>> + Send + Sync + 'static,
     {
         self.server
             .start(handler)
@@ -66,9 +67,8 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
     }
 }
 
-pub fn mock_response(status: StatusCode, body: &[u8]) -> ResponseType {
-    http::Response::builder()
+pub fn mock_response(status: StatusCode, body: &[u8]) -> Response {
+    Response::builder()
         .status(status)
-        .body(Full::new(Bytes::from(body.to_vec())))
-        .unwrap()
+        .body(Either::Right(Full::new(Bytes::from(body.to_vec()))))
 }

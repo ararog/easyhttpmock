@@ -12,4 +12,6 @@ pub enum ServerError {
     Start(String),
     #[error("Server stop error: {0}")]
     Stop(String),
+    #[error("Server creation error: {0}")]
+    Creation(String),
 }

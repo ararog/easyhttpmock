@@ -1,17 +1,19 @@
 #[cfg(test)]
 mod easy_http_mock_server_tests {
-    use crate::config::EasyHttpMockConfig;
-    use crate::server::adapters::vetis_adapter::VetisServerAdapter;
-    use crate::EasyHttpMock;
+    use crate::{
+        config::EasyHttpMockConfig,
+        server::adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+        EasyHttpMock,
+    };
     use bytes::Bytes;
-    use http::{Response, StatusCode};
-    use http_body_util::Full;
+    use http::StatusCode;
+    use http_body_util::{Either, Full};
     use std::time::Duration;
-    use vetis::{RequestType, ResponseType};
+    use vetis::{Request, Response};
 
     #[tokio::test]
     async fn test_easy_http_mock_default() {
-        let mock = EasyHttpMock::<VetisServerAdapter>::default();
+        let mock = EasyHttpMock::<VetisAdapter>::default();
 
         assert_eq!(mock.base_url(), "http://localhost:80");
         assert_eq!(mock.url("/test"), "http://localhost:80/test");
@@ -19,48 +21,46 @@ mod easy_http_mock_server_tests {
     }
 
     #[tokio::test]
-    async fn test_easy_http_mock_with_custom_config() {
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+    async fn test_easy_http_mock_with_custom_config() -> Result<(), Box<dyn std::error::Error>> {
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .base_url(Some("https://custom.mock".to_string()))
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(3000)
-                    .interface("127.0.0.1".to_string())
                     .build(),
             )
             .build();
 
-        let mock = EasyHttpMock::new(config);
+        let mock = EasyHttpMock::new(config)?;
 
         assert_eq!(mock.base_url(), "http://localhost:3000");
         assert_eq!(mock.url("/api"), "https://custom.mock/api");
         assert_eq!(mock.url(""), "https://custom.mock");
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_lifecycle() {
-        // Use a random available port to avoid permission issues
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+    async fn test_server_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
-                    .port(4000) // Use random available port
-                    .interface("127.0.0.1".to_string())
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
+                    .port(4000)
                     .build(),
             )
             .build();
 
-        let mut mock = EasyHttpMock::new(config);
+        let mut mock = EasyHttpMock::new(config)?;
 
-        // Define a simple handler that returns a mock response
-        let handler = |_req: RequestType| async move {
-            let response: ResponseType = Response::builder()
+        let handler = |_req: Request| async move {
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .body(Full::new(Bytes::from("Hello, World!")))
-                .unwrap();
+                .text("Hello, World!");
             Ok(response)
         };
 
-        // Start the server
         let result = mock
             .start(handler)
             .await;
@@ -69,56 +69,55 @@ mod easy_http_mock_server_tests {
         }
         assert!(result.is_ok());
 
-        // Give the server a moment to start
         tokio::time::sleep(Duration::from_millis(100)).await;
 
-        // Stop the server
         let result = mock.stop().await;
         assert!(result.is_ok());
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_url_generation() {
-        // Test with default config (no base_url override)
-        let mock = EasyHttpMock::<VetisServerAdapter>::default();
+    async fn test_url_generation() -> Result<(), Box<dyn std::error::Error>> {
+        let mock = EasyHttpMock::<VetisAdapter>::default();
         assert_eq!(mock.url("/api/users"), "http://localhost:80/api/users");
         assert_eq!(mock.url("/"), "http://localhost:80/");
         assert_eq!(mock.url(""), "http://localhost:80");
         assert_eq!(mock.url("test"), "http://localhost:80test");
 
-        // Test with custom base_url
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .base_url(Some("https://api.example.com".to_string()))
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(8181)
                     .build(),
             )
             .build();
 
-        let mock = EasyHttpMock::new(config);
+        let mock = EasyHttpMock::new(config)?;
         assert_eq!(mock.url("/v1/users"), "https://api.example.com/v1/users");
         assert_eq!(mock.url("/"), "https://api.example.com/");
         assert_eq!(mock.url(""), "https://api.example.com");
         assert_eq!(mock.url("health"), "https://api.example.comhealth");
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_with_different_responses() {
-        // Use a random available port to avoid permission issues
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+    async fn test_server_with_different_responses() -> Result<(), Box<dyn std::error::Error>> {
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
-                    .port(9999) // Use random available port
-                    .interface("127.0.0.1".to_string())
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
+                    .port(9999)
                     .build(),
             )
             .build();
 
-        let mut mock = EasyHttpMock::new(config);
+        let mut mock = EasyHttpMock::new(config)?;
 
-        // Define a handler that responds based on path
-        let handler = |req: RequestType| async move {
+        let handler = |req: Request| async move {
             let path = req.uri().path();
             let (status, body) = match path {
                 "/health" => (StatusCode::OK, "OK"),
@@ -126,51 +125,44 @@ mod easy_http_mock_server_tests {
                 _ => (StatusCode::OK, "Default Response"),
             };
 
-            let response: ResponseType = Response::builder()
+            let response: Response = Response::builder()
                 .status(status)
-                .body(Full::new(Bytes::from(body)))
-                .unwrap();
+                .body(Either::Right(Full::new(Bytes::from(body))));
             Ok(response)
         };
 
-        // Start the server
         mock.start(handler)
             .await
             .unwrap();
 
-        // Give the server a moment to start
         tokio::time::sleep(Duration::from_millis(100)).await;
 
-        // Test that server started successfully
         assert!(mock
             .base_url()
             .contains("localhost:"));
         assert!(!mock
             .base_url()
-            .contains("localhost:80")); // Should not be default port
+            .contains("localhost:80"));
 
-        // Stop the server
-        mock.stop()
-            .await
-            .unwrap();
+        mock.stop().await?;
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_with_json_response() {
-        // Use a random available port to avoid permission issues
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+    async fn test_server_with_json_response() -> Result<(), Box<dyn std::error::Error>> {
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(7777) // Use random available port
-                    .interface("127.0.0.1".to_string())
                     .build(),
             )
             .build();
 
-        let mut mock = EasyHttpMock::new(config);
+        let mut mock = EasyHttpMock::new(config)?;
 
-        // Define a handler that returns JSON
-        let handler = |_req: RequestType| async move {
+        let handler = |_req: Request| async move {
             let json_body = r#"{
                 "id": 1,
                 "name": "Test User",
@@ -178,23 +170,25 @@ mod easy_http_mock_server_tests {
                 "active": true
             }"#;
 
-            let response: ResponseType = Response::builder()
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .header("Content-Type", "application/json")
-                .body(Full::new(Bytes::from(json_body)))
-                .unwrap();
+                .header(
+                    "Content-Type",
+                    "application/json"
+                        .parse()
+                        .unwrap(),
+                )
+                .text(json_body);
             Ok(response)
         };
 
-        // Start the server
         mock.start(handler)
             .await
             .unwrap();
 
-        // Give the server a moment to start
+        tokio::time::sleep(Duration::from_millis(100)).await;
         tokio::time::sleep(Duration::from_millis(100)).await;
 
-        // Verify server is running
         assert!(mock
             .base_url()
             .contains("localhost:7777"));
@@ -202,67 +196,62 @@ mod easy_http_mock_server_tests {
             .base_url()
             .is_empty());
 
-        // Stop the server
         mock.stop()
             .await
             .unwrap();
+
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod integration_tests {
-    use crate::config::EasyHttpMockConfig;
-    use crate::server::adapters::vetis_adapter::VetisServerAdapter;
-    use crate::EasyHttpMock;
-    use bytes::Bytes;
-    use http::{Response, StatusCode};
-    use http_body_util::Full;
+    use crate::{
+        config::EasyHttpMockConfig,
+        server::adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+        EasyHttpMock,
+    };
+    use http::StatusCode;
     use std::time::Duration;
-    use vetis::{RequestType, ResponseType};
+    use vetis::{Request, Response};
 
     #[tokio::test]
-    async fn test_multiple_server_instances() {
-        // Create two different server instances with random ports
-        let config1 = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+    async fn test_multiple_server_instances() -> Result<(), Box<dyn std::error::Error>> {
+        let config1 = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(8081)
-                    .interface("127.0.0.1".to_string())
                     .build(),
             )
             .build();
 
-        let config2 = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+        let config2 = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(8082)
-                    .interface("127.0.0.1".to_string())
                     .build(),
             )
             .build();
 
-        let mut mock1 = EasyHttpMock::new(config1);
-        let mut mock2 = EasyHttpMock::new(config2);
+        let mut mock1 = EasyHttpMock::new(config1)?;
+        let mut mock2 = EasyHttpMock::new(config2)?;
 
-        // Handler for server 1
-        let handler1 = |_req: RequestType| async move {
-            let response: ResponseType = Response::builder()
+        let handler1 = |_req: Request| async move {
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .body(Full::new(Bytes::from("Server 1 response")))
-                .unwrap();
+                .text("Server 1 response");
             Ok(response)
         };
 
-        // Handler for server 2
-        let handler2 = |_req: RequestType| async move {
-            let response: ResponseType = Response::builder()
+        let handler2 = |_req: Request| async move {
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .body(Full::new(Bytes::from("Server 2 response")))
-                .unwrap();
+                .text("Server 2 response");
             Ok(response)
         };
 
-        // Start both servers - this should work without conflicts
         mock1
             .start(handler1)
             .await
@@ -272,18 +261,14 @@ mod integration_tests {
             .await
             .unwrap();
 
-        // Give servers a moment to start
         tokio::time::sleep(Duration::from_millis(100)).await;
 
-        // Verify both servers are running (they should be able to start successfully)
         let base_url1 = mock1.base_url();
         let base_url2 = mock2.base_url();
 
-        // Both should contain localhost
         assert!(base_url1.contains("localhost"));
         assert!(base_url2.contains("localhost"));
 
-        // Stop both servers
         mock1
             .stop()
             .await
@@ -292,75 +277,71 @@ mod integration_tests {
             .stop()
             .await
             .unwrap();
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_with_random_port() {
+    async fn test_server_with_random_port() -> Result<(), Box<dyn std::error::Error>> {
         // Create a mock server with random port
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(8888) // Use random available port
-                    .interface("127.0.0.1".to_string())
                     .build(),
             )
             .build();
 
-        let mut mock = EasyHttpMock::new(config);
+        let mut mock = EasyHttpMock::new(config)?;
 
-        // Define a simple handler
-        let handler = |_req: RequestType| async move {
-            let response: ResponseType = Response::builder()
+        let handler = |_req: Request| async move {
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .body(Full::new(Bytes::from("Random port test")))
-                .unwrap();
+                .text("Random port test");
             Ok(response)
         };
 
-        // Start the server
         mock.start(handler)
             .await
             .unwrap();
 
-        // Give the server a moment to start
+        tokio::time::sleep(Duration::from_millis(100)).await;
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         let base_url = mock.base_url();
 
-        // Verify the URL contains a port (not the default 80)
         assert!(base_url.contains("localhost:8888"));
-        assert!(!base_url.contains("localhost:80")); // Should not be default port
+        assert!(!base_url.contains("localhost:80"));
 
-        // Stop the server
         mock.stop()
             .await
             .unwrap();
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_restart() {
+    async fn test_server_restart() -> Result<(), Box<dyn std::error::Error>> {
         // Use a random available port to avoid permission issues
-        let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
+        let config = EasyHttpMockConfig::<VetisAdapter>::builder()
             .server_config(
-                vetis::server::config::ServerConfig::builder()
+                VetisAdapterConfig::builder()
+                    .interface("127.0.0.1")
                     .port(5555) // Use random available port
-                    .interface("127.0.0.1".to_string())
                     .build(),
             )
             .build();
 
-        let mut mock = EasyHttpMock::new(config);
+        let mut mock = EasyHttpMock::new(config)?;
 
-        // Define a handler
-        let handler = |_req: RequestType| async move {
-            let response: ResponseType = Response::builder()
+        let handler = |_req: Request| async move {
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .body(Full::new(Bytes::from("Restart test")))
-                .unwrap();
+                .text("Restart test");
             Ok(response)
         };
 
-        // Start the server
         mock.start(handler)
             .await
             .unwrap();
@@ -373,11 +354,10 @@ mod integration_tests {
         tokio::time::sleep(Duration::from_millis(50)).await;
 
         // Start the server again with a new handler
-        let handler2 = |_req: RequestType| async move {
-            let response: ResponseType = Response::builder()
+        let handler2 = |_req: Request| async move {
+            let response: Response = Response::builder()
                 .status(StatusCode::OK)
-                .body(Full::new(Bytes::from("Restarted")))
-                .unwrap();
+                .text("Restarted");
             Ok(response)
         };
 
@@ -398,5 +378,7 @@ mod integration_tests {
         mock.stop()
             .await
             .unwrap();
+
+        Ok(())
     }
 }
