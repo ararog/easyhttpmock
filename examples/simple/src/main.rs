@@ -1,7 +1,4 @@
-use bytes::Bytes;
 use http::StatusCode;
-use http_body_util::Full;
-use hyper::Response;
 
 use easyhttpmock::{
     config::EasyHttpMockConfig,
@@ -12,9 +9,7 @@ use easyhttpmock::{
 use deboa::{cert::ContentEncoding, request::DeboaRequest, Client};
 
 use vetis::{
-    server::{
-        config::{SecurityConfig, ServerConfig},
-    },
+    Response, config::{SecurityConfig, ServerConfig, VirtualHostConfig}
 };
 
 pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
@@ -26,13 +21,23 @@ pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tls_config = SecurityConfig::builder()
-        .cert(SERVER_CERT.to_vec())
-        .key(SERVER_KEY.to_vec())
+        .cert_from_bytes(SERVER_CERT.to_vec())
+        .key_from_bytes(SERVER_KEY.to_vec())
+        .build();
+
+    let listener_config = vetis::config::ListenerConfig::builder()
+        .port(8080)
+        .interface("0.0.0.0")
+        .build();
+
+    let host_config = VirtualHostConfig::builder()
+        .security(tls_config)
+        .hostname("localhost")
+        .port(8080)
         .build();
 
     let vetis_config = ServerConfig::builder()
-        .security(tls_config)
-        .with_random_port()
+        .add_listener(listener_config)
         .build();
 
     let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
@@ -43,7 +48,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[allow(unused_must_use)]
     let result = server
         .start(|_| async move {
-            Ok(Response::new(Full::new(Bytes::from("Hello World"))))
+            Ok(Response::builder()
+                .status(StatusCode::OK)
+                .text("Hello World"))
         })
         .await;
 
@@ -55,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .certificate(deboa::cert::Certificate::from_slice(CA_CERT, ContentEncoding::DER))
         .build();
 
-    let request = DeboaRequest::get(server.url("/anything"))?.build()?;
+    let request = DeboaRequest::get(server.url("/anything").await)?.build()?;
 
     let response = client
         .execute(request)
