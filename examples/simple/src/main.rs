@@ -1,16 +1,21 @@
 use http::StatusCode;
 
 use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    server::{adapters::vetis_adapter::VetisServerAdapter, PortGenerator},
     EasyHttpMock,
+    config::EasyHttpMockConfig,
+    server::{
+        PortGenerator,
+        adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+    },
 };
 
-use deboa::{cert::ContentEncoding, request::DeboaRequest, Client};
-
-use vetis::{
-    Response, config::{SecurityConfig, ServerConfig, VirtualHostConfig}
+use deboa::{
+    Client,
+    cert::{Certificate, ContentEncoding},
+    request::DeboaRequest,
 };
+
+use vetis::Response;
 
 pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
 pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
@@ -20,31 +25,19 @@ pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let tls_config = SecurityConfig::builder()
-        .cert_from_bytes(SERVER_CERT.to_vec())
-        .key_from_bytes(SERVER_KEY.to_vec())
-        .build();
-
-    let listener_config = vetis::config::ListenerConfig::builder()
-        .port(8080)
+    let vetis_adapter_config = VetisAdapterConfig::builder()
         .interface("0.0.0.0")
+        .with_random_port()
+        .cert(Some(SERVER_CERT.to_vec()))
+        .key(Some(SERVER_KEY.to_vec()))
+        .ca(Some(CA_CERT.to_vec()))
         .build();
 
-    let host_config = VirtualHostConfig::builder()
-        .security(tls_config)
-        .hostname("localhost")
-        .port(8080)
+    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
+        .server_config(vetis_adapter_config)
         .build();
 
-    let vetis_config = ServerConfig::builder()
-        .add_listener(listener_config)
-        .build();
-
-    let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
-        .server_config(vetis_config)
-        .build();
-
-    let mut server = EasyHttpMock::new(config);
+    let mut server = EasyHttpMock::new(config)?;
     #[allow(unused_must_use)]
     let result = server
         .start(|_| async move {
@@ -59,10 +52,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let client = Client::builder()
-        .certificate(deboa::cert::Certificate::from_slice(CA_CERT, ContentEncoding::DER))
+        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
         .build();
 
-    let request = DeboaRequest::get(server.url("/anything").await)?.build()?;
+    let url = server.url("/anything");
+    let request = DeboaRequest::get(url)?.build()?;
 
     let response = client
         .execute(request)
@@ -75,6 +69,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     server
         .stop()
         .await?;
-    
+
     Ok(())
 }
