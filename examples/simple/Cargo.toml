@@ -5,7 +5,11 @@ edition = "2024"
 
 [dependencies]
 bytes = "1.11.0"
-deboa = { version = "0.1.0-beta.1", path = "../../../deboa/deboa" }
+deboa = { version = "0.1.0-beta.1", features = [
+  "http1",
+  "tokio-rt",
+  "tokio-rust-tls",
+], default-features = false, path = "../../../deboa/deboa" }
 easyhttpmock = { version = "0.1.2", path = "../.." }
 env_logger = "0.11.8"
 http = "1.4.0"

@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use vetis::{
-    config::{ListenerConfig, ServerConfig, VirtualHostConfig},
+    config::{ListenerConfig, SecurityConfig, ServerConfig, VirtualHostConfig},
     errors::VetisError,
     server::{
         path::HandlerPath,
@@ -22,6 +22,7 @@ pub struct VetisAdapterConfigBuilder {
     port: u16,
     cert: Option<Vec<u8>>,
     key: Option<Vec<u8>>,
+    ca: Option<Vec<u8>>,
 }
 
 impl VetisAdapterConfigBuilder {
@@ -45,12 +46,18 @@ impl VetisAdapterConfigBuilder {
         self
     }
 
+    pub fn ca(mut self, ca: Option<Vec<u8>>) -> Self {
+        self.ca = ca;
+        self
+    }
+
     pub fn build(self) -> VetisAdapterConfig {
         VetisAdapterConfig {
             interface: self.interface,
             port: self.port,
             cert: self.cert,
             key: self.key,
+            ca: self.ca,
         }
     }
 }
@@ -61,17 +68,24 @@ pub struct VetisAdapterConfig {
     port: u16,
     cert: Option<Vec<u8>>,
     key: Option<Vec<u8>>,
+    ca: Option<Vec<u8>>,
 }
 
 impl Default for VetisAdapterConfig {
     fn default() -> Self {
-        Self { interface: "0.0.0.0".into(), port: 80, cert: None, key: None }
+        Self { interface: "0.0.0.0".into(), port: 80, cert: None, key: None, ca: None }
     }
 }
 
 impl VetisAdapterConfig {
     pub fn builder() -> VetisAdapterConfigBuilder {
-        VetisAdapterConfigBuilder { interface: "0.0.0.0".into(), cert: None, key: None, port: 80 }
+        VetisAdapterConfigBuilder {
+            interface: "0.0.0.0".into(),
+            port: 80,
+            cert: None,
+            key: None,
+            ca: None,
+        }
     }
 
     pub fn interface(&self) -> &str {
@@ -88,6 +102,10 @@ impl VetisAdapterConfig {
 
     pub fn key(&self) -> &Option<Vec<u8>> {
         &self.key
+    }
+
+    pub fn ca(&self) -> &Option<Vec<u8>> {
+        &self.ca
     }
 }
 
@@ -121,6 +139,7 @@ impl Default for EasyHttpMockConfig<VetisAdapter> {
             .interface("0.0.0.0")
             .cert(None)
             .key(None)
+            .ca(None)
             .port(80)
             .build();
         EasyHttpMockConfig::<VetisAdapter>::builder()
@@ -150,7 +169,15 @@ impl ServerAdapter for VetisAdapter {
     }
 
     fn base_url(&self) -> String {
-        format!("http://localhost:{}", self.config.port())
+        if self
+            .config
+            .cert
+            .is_some()
+        {
+            format!("https://localhost:{}", self.config.port())
+        } else {
+            format!("http://localhost:{}", self.config.port())
+        }
     }
 
     fn config(&self) -> &Self::Config {
@@ -166,7 +193,34 @@ impl ServerAdapter for VetisAdapter {
 
         let host_config = VirtualHostConfig::builder()
             .hostname("localhost")
-            .port(self.config.port())
+            .port(self.config.port());
+
+        let host_config = if let Some(((cert, key), ca)) = self
+            .config
+            .cert
+            .as_ref()
+            .zip(
+                self.config
+                    .key
+                    .as_ref(),
+            )
+            .zip(
+                self.config
+                    .ca
+                    .as_ref(),
+            ) {
+            host_config.security(
+                SecurityConfig::builder()
+                    .cert_from_bytes(cert.clone())
+                    .key_from_bytes(key.clone())
+                    .ca_cert_from_bytes(ca.clone())
+                    .build(),
+            )
+        } else {
+            host_config
+        };
+
+        let host_config = host_config
             .build()
             .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
 
