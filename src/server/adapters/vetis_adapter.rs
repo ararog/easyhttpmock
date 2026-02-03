@@ -189,7 +189,11 @@ impl ServerAdapter for VetisAdapter {
         H: Fn(Request) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<Response, VetisError>> + Send + Sync + 'static,
     {
-        let path = HandlerPath::new_host_path("/", handler_fn(handler));
+        let path = HandlerPath::builder()
+            .uri("/")
+            .handler(handler_fn(handler))
+            .build()
+            .unwrap();
 
         let host_config = VirtualHostConfig::builder()
             .hostname("localhost")
