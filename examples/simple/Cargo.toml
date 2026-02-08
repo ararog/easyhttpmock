@@ -5,16 +5,16 @@ edition = "2024"
 
 [dependencies]
 bytes = "1.11.0"
-deboa = { version = "0.1.0-beta.1", features = [
-  "http1",
+deboa = { version = "0.1.0-beta.2", features = [
+  "http2",
   "tokio-rt",
   "tokio-rust-tls",
-], default-features = false, path = "../../../deboa/deboa" }
-easyhttpmock = { version = "0.1.2", path = "../.." }
+], default-features = false }
+easyhttpmock = { version = "0.1.3-beta.1" }
 env_logger = "0.11.8"
 http = "1.4.0"
 http-body-util = "0.1.3"
 hyper = "1.8.1"
 tokio = { version = "1.49.0", features = ["full"] }
 url = "2.5.8"
-vetis = { version = "0.1.4-beta.1", path = "../../../vetis/vetis" }
+vetis = { version = "0.1.4-beta.2" }

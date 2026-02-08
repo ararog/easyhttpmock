@@ -67,8 +67,8 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
     }
 }
 
-pub fn mock_response(status: StatusCode, body: &[u8]) -> Response {
+pub fn mock_response(status: StatusCode, body: &str) -> Response {
     Response::builder()
         .status(status)
-        .body(Either::Right(Full::new(Bytes::from(body.to_vec()))))
+        .text(body)
 }

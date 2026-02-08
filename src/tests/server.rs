@@ -127,7 +127,7 @@ mod easy_http_mock_server_tests {
 
             let response: Response = Response::builder()
                 .status(status)
-                .body(Either::Right(Full::new(Bytes::from(body))));
+                .text(body);
             Ok(response)
         };
 
