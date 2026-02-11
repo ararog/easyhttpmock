@@ -3,11 +3,10 @@ mod easy_http_mock_server_tests {
     use crate::{
         config::EasyHttpMockConfig,
         server::adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+        tests::default_protocol,
         EasyHttpMock,
     };
-    use bytes::Bytes;
     use http::StatusCode;
-    use http_body_util::{Either, Full};
     use std::time::Duration;
     use vetis::{Request, Response};
 
@@ -27,6 +26,7 @@ mod easy_http_mock_server_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(3000)
                     .build(),
             )
@@ -47,6 +47,7 @@ mod easy_http_mock_server_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(4000)
                     .build(),
             )
@@ -90,6 +91,7 @@ mod easy_http_mock_server_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(8181)
                     .build(),
             )
@@ -110,6 +112,7 @@ mod easy_http_mock_server_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(9999)
                     .build(),
             )
@@ -155,6 +158,7 @@ mod easy_http_mock_server_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(7777) // Use random available port
                     .build(),
             )
@@ -209,6 +213,7 @@ mod integration_tests {
     use crate::{
         config::EasyHttpMockConfig,
         server::adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+        tests::default_protocol,
         EasyHttpMock,
     };
     use http::StatusCode;
@@ -221,6 +226,7 @@ mod integration_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(8081)
                     .build(),
             )
@@ -230,6 +236,7 @@ mod integration_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(8082)
                     .build(),
             )
@@ -288,6 +295,7 @@ mod integration_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(8888) // Use random available port
                     .build(),
             )
@@ -328,6 +336,7 @@ mod integration_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("127.0.0.1")
+                    .protocol(default_protocol())
                     .port(5555) // Use random available port
                     .build(),
             )

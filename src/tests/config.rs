@@ -3,6 +3,7 @@ mod easy_http_mock_config_tests {
     use crate::{
         config::EasyHttpMockConfig,
         server::adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+        tests::default_protocol,
     };
 
     #[test]
@@ -97,6 +98,7 @@ mod easy_http_mock_config_tests {
     fn test_easy_http_mock_config_builder_with_server_config() {
         let server_config = VetisAdapterConfig::builder()
             .interface("127.0.0.1")
+            .protocol(default_protocol())
             .port(3000)
             .build();
 
@@ -126,6 +128,7 @@ mod easy_http_mock_config_tests {
         let base_url = "https://test.mock".to_string();
         let server_config = VetisAdapterConfig::builder()
             .interface("0.0.0.0")
+            .protocol(default_protocol())
             .port(8443)
             .build();
 
@@ -153,6 +156,7 @@ mod easy_http_mock_config_tests {
     fn test_easy_http_mock_config_builder_chaining() {
         let server_config = VetisAdapterConfig::builder()
             .interface("192.168.1.100")
+            .protocol(default_protocol())
             .port(9090)
             .build();
 
@@ -207,12 +211,14 @@ mod integration_tests {
     use crate::{
         config::EasyHttpMockConfig,
         server::adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
+        tests::default_protocol,
     };
 
     #[test]
     fn test_config_with_vetis_server_adapter_integration() {
         let server_config = VetisAdapterConfig::builder()
             .interface("0.0.0.0")
+            .protocol(default_protocol())
             .port(443)
             .build();
 
@@ -236,6 +242,7 @@ mod integration_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("0.0.0.0")
+                    .protocol(default_protocol())
                     .port(8080)
                     .build(),
             )
@@ -246,6 +253,7 @@ mod integration_tests {
             .server_config(
                 VetisAdapterConfig::builder()
                     .interface("0.0.0.0")
+                    .protocol(default_protocol())
                     .port(9090)
                     .build(),
             )
@@ -268,6 +276,7 @@ mod integration_tests {
             .base_url(Some("https://immutable.mock".to_string()))
             .server_config(
                 VetisAdapterConfig::builder()
+                    .protocol(default_protocol())
                     .port(3000)
                     .build(),
             )
@@ -285,6 +294,7 @@ mod integration_tests {
             .base_url(Some("https://new.mock".to_string()))
             .server_config(
                 VetisAdapterConfig::builder()
+                    .protocol(default_protocol())
                     .port(3000)
                     .build(),
             )
@@ -303,11 +313,13 @@ mod integration_tests {
     fn test_config_with_different_server_configs() {
         let http_config = VetisAdapterConfig::builder()
             .interface("0.0.0.0")
+            .protocol(default_protocol())
             .port(80)
             .build();
 
         let https_config = VetisAdapterConfig::builder()
             .interface("0.0.0.0")
+            .protocol(default_protocol())
             .port(443)
             .build();
 
