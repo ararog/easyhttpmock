@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use vetis::{
-    config::{ListenerConfig, SecurityConfig, ServerConfig, VirtualHostConfig},
+    config::{ListenerConfig, Protocol, SecurityConfig, ServerConfig, VirtualHostConfig},
     errors::VetisError,
     server::{
         path::HandlerPath,
@@ -21,6 +21,7 @@ use crate::{
 pub struct VetisAdapterConfigBuilder {
     hostname: Option<String>,
     interface: String,
+    protocol: Protocol,
     port: u16,
     cert: Option<Vec<u8>>,
     key: Option<Vec<u8>>,
@@ -49,6 +50,18 @@ impl VetisAdapterConfigBuilder {
     /// A new `VetisAdapterConfigBuilder` instance with the interface set.
     pub fn interface(mut self, interface: &str) -> Self {
         self.interface = interface.to_string();
+        self
+    }
+
+    /// Sets the protocol for the server.
+    ///
+    /// # Arguments
+    /// * `protocol` - The protocol to set.
+    ///
+    /// # Returns
+    /// A new `VetisAdapterConfigBuilder` instance with the protocol set.
+    pub fn protocol(mut self, protocol: Protocol) -> Self {
+        self.protocol = protocol;
         self
     }
 
@@ -108,6 +121,7 @@ impl VetisAdapterConfigBuilder {
         VetisAdapterConfig {
             hostname: self.hostname,
             interface: self.interface,
+            protocol: self.protocol,
             port: self.port,
             cert: self.cert,
             key: self.key,
@@ -121,6 +135,7 @@ impl VetisAdapterConfigBuilder {
 pub struct VetisAdapterConfig {
     hostname: Option<String>,
     interface: String,
+    protocol: Protocol,
     port: u16,
     cert: Option<Vec<u8>>,
     key: Option<Vec<u8>>,
@@ -141,6 +156,7 @@ impl Default for VetisAdapterConfig {
         Self {
             hostname: None,
             interface: "0.0.0.0".into(),
+            protocol: Protocol::Http1,
             port: 80,
             cert: None,
             key: None,
@@ -163,6 +179,7 @@ impl VetisAdapterConfig {
         VetisAdapterConfigBuilder {
             hostname: None,
             interface: "0.0.0.0".into(),
+            protocol: Protocol::Http1,
             port: 80,
             cert: None,
             key: None,
@@ -223,11 +240,14 @@ impl From<VetisAdapterConfig> for ServerConfig {
     fn from(config: VetisAdapterConfig) -> Self {
         let listener_config = ListenerConfig::builder()
             .interface(&config.interface)
+            .protocol(config.protocol)
             .port(config.port)
-            .build();
+            .build()
+            .expect("Failed to build listener config");
         ServerConfig::builder()
             .add_listener(listener_config)
             .build()
+            .expect("Failed to build server config")
     }
 }
 
@@ -353,6 +373,7 @@ impl ServerAdapter for VetisAdapter {
 
         let host_config = VirtualHostConfig::builder()
             .hostname(&hostname)
+            .root_directory("src/tests")
             .port(self.config.port());
 
         let host_config = if let Some(((cert, key), ca)) = self
@@ -374,7 +395,8 @@ impl ServerAdapter for VetisAdapter {
                     .cert_from_bytes(cert.clone())
                     .key_from_bytes(key.clone())
                     .ca_cert_from_bytes(ca.clone())
-                    .build(),
+                    .build()
+                    .map_err(|e| EasyHttpMockError::Server(ServerError::Config(e.to_string())))?,
             )
         } else {
             host_config
