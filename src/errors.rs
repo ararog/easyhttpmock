@@ -8,6 +8,8 @@ pub enum EasyHttpMockError {
 
 #[derive(Debug, Clone, Error, PartialEq)]
 pub enum ServerError {
+    #[error("Server config error: {0}")]
+    Config(String),
     #[error("Server start error: {0}")]
     Start(String),
     #[error("Server stop error: {0}")]
