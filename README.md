@@ -29,24 +29,24 @@ easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http2", "tokio-rust
 Here's how simple it is to create a mock HTTP server for testing:
 
 ```rust
-use bytes::Bytes;
 use http::StatusCode;
-use http_body_util::Full;
-use hyper::Response;
 
 use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    server::{adapters::vetis_adapter::VetisServerAdapter, PortGenerator},
     EasyHttpMock,
-};
-
-use deboa::{cert::ContentEncoding, request::DeboaRequest, Client};
-
-use vetis::{
+    config::EasyHttpMockConfig,
     server::{
-        config::{SecurityConfig, ServerConfig},
+        PortGenerator,
+        adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
     },
 };
+
+use deboa::{
+    Client,
+    cert::{Certificate, ContentEncoding},
+    request::DeboaRequest,
+};
+
+use vetis::Response;
 
 pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
 pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
@@ -56,25 +56,25 @@ pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let tls_config = SecurityConfig::builder()
-        .cert(SERVER_CERT.to_vec())
-        .key(SERVER_KEY.to_vec())
-        .build();
-
-    let vetis_config = ServerConfig::builder()
-        .security(tls_config)
+    let vetis_adapter_config = VetisAdapterConfig::builder()
+        .interface("0.0.0.0")
         .with_random_port()
+        .cert(Some(SERVER_CERT.to_vec()))
+        .key(Some(SERVER_KEY.to_vec()))
+        .ca(Some(CA_CERT.to_vec()))
         .build();
 
-    let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
-        .server_config(vetis_config)
+    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
+        .server_config(vetis_adapter_config)
         .build();
 
-    let mut server = EasyHttpMock::new(config);
+    let mut server = EasyHttpMock::new(config)?;
     #[allow(unused_must_use)]
     let result = server
         .start(|_| async move {
-            Ok(Response::new(Full::new(Bytes::from("Hello World"))))
+            Ok(Response::builder()
+                .status(StatusCode::OK)
+                .text("Hello World"))
         })
         .await;
 
@@ -83,10 +83,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let client = Client::builder()
-        .certificate(deboa::cert::Certificate::from_slice(CA_CERT, ContentEncoding::DER))
+        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
         .build();
 
-    let request = DeboaRequest::get(server.url("/anything"))?.build()?;
+    let url = server.url("/anything");
+    let request = DeboaRequest::get(url)?.build()?;
 
     let response = client
         .execute(request)
@@ -99,7 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     server
         .stop()
         .await?;
-    
+
     Ok(())
 }
 ```
