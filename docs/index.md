@@ -9,10 +9,7 @@ permalink: /
 <h1><b>EasyHttpMock</b></h1>
 </div>
 
-[![crates.io](https://img.shields.io/crates/v/easyhttpmock?style=flat-square)](https://crates.io/crates/easyhttpmock)
-[![Build Status](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml)
-[![Documentation](https://docs.rs/easyhttpmock/badge.svg)](https://docs.rs/easyhttpmock/latest/easyhttpmock)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Crates.io downloads](https://img.shields.io/crates/d/easyhttpmock)](https://crates.io/crates/easyhttpmock) [![crates.io](https://img.shields.io/crates/v/easyhttpmock?style=flat-square)](https://crates.io/crates/easyhttpmock) [![Build Status](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml) ![Crates.io MSRV](https://img.shields.io/crates/msrv/easyhttpmock) [![Documentation](https://docs.rs/easyhttpmock/badge.svg)](https://docs.rs/easyhttpmock/latest/easyhttpmock) [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/ararog/easyhttpmock/blob/main/LICENSE.md)  [![codecov](https://codecov.io/gh/ararog/easyhttpmock/graph/badge.svg?token=T0HSBAPVSI)](https://codecov.io/gh/ararog/easyhttpmock)
 
 **EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. Built on top of [VeTiS](https://github.com/ararog/vetis), it provides a clean, intuitive API for creating realistic mock endpoints that simulate real-world API behavior, making your testing workflow faster and more reliable.
 
@@ -37,24 +34,24 @@ easyhttpmock = { version = "0.0.9" }
 Basic usage:
 
 ```rust
-use bytes::Bytes;
 use http::StatusCode;
-use http_body_util::Full;
-use hyper::Response;
 
 use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    server::{adapters::vetis_adapter::VetisServerAdapter, PortGenerator},
     EasyHttpMock,
-};
-
-use deboa::{cert::ContentEncoding, request::DeboaRequest, Client};
-
-use vetis::{
+    config::EasyHttpMockConfig,
     server::{
-        config::{SecurityConfig, ServerConfig},
+        PortGenerator,
+        adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
     },
 };
+
+use deboa::{
+    Client,
+    cert::{Certificate, ContentEncoding},
+    request::DeboaRequest,
+};
+
+use vetis::Response;
 
 pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
 pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
@@ -64,22 +61,19 @@ pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let tls_config = SecurityConfig::builder()
-        .cert(SERVER_CERT.to_vec())
-        .key(SERVER_KEY.to_vec())
-        .build();
-
-    let vetis_config = ServerConfig::builder()
-        .security(tls_config)
+    let vetis_adapter_config = VetisAdapterConfig::builder()
+        .interface("0.0.0.0")
         .with_random_port()
+        .cert(Some(SERVER_CERT.to_vec()))
+        .key(Some(SERVER_KEY.to_vec()))
+        .ca(Some(CA_CERT.to_vec()))
         .build();
 
-    let config = EasyHttpMockConfig::<VetisServerAdapter>::builder()
-        .server_config(vetis_config)
+    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
+        .server_config(vetis_adapter_config)
         .build();
 
-    let mut server = EasyHttpMock::new(config);
-    #[allow(unused_must_use)]
+    let mut server = EasyHttpMock::new(config)?;
     let result = server
         .start(|_| async move {
             Ok(Response::new(Full::new(Bytes::from("Hello World"))))
@@ -109,6 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     
     Ok(())
+}    
 ```
 
 ## Examples
