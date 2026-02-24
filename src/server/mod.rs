@@ -1,6 +1,9 @@
 use std::future::Future;
 
-use vetis::{errors::VetisError, Request, Response};
+use vetis::{
+    errors::VetisError,
+    server::http::{Request, Response},
+};
 
 use crate::errors::EasyHttpMockError;
 

@@ -8,7 +8,7 @@ mod easy_http_mock_server_tests {
     };
     use http::StatusCode;
     use std::time::Duration;
-    use vetis::{Request, Response};
+    use vetis::server::http::{Request, Response};
 
     #[tokio::test]
     async fn test_easy_http_mock_default() {
@@ -218,7 +218,7 @@ mod integration_tests {
     };
     use http::StatusCode;
     use std::time::Duration;
-    use vetis::{Request, Response};
+    use vetis::server::http::{Request, Response};
 
     #[tokio::test]
     async fn test_multiple_server_instances() -> Result<(), Box<dyn std::error::Error>> {
