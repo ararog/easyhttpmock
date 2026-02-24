@@ -354,10 +354,16 @@ impl ServerAdapter for VetisAdapter {
     /// Starts the server with the given handler.
     ///
     /// # Arguments
+    ///
     /// * `handler` - The handler to use for the server.
     ///
     /// # Returns
-    /// A result indicating whether the server started successfully.    
+    ///
+    /// A result indicating whether the server started successfully or a `EasyHttpMockError` if it failed.
+    ///
+    /// TODO: Make handler a EasyHttpMockHandler and convert from EasyMockRequest
+    /// and Response to Vetis Request and Response. Maybe have From implementation
+    /// for EasyMockRequest and Response.
     async fn start<H, Fut>(&mut self, handler: H) -> Result<(), EasyHttpMockError>
     where
         H: Fn(Request) -> Fut + Send + Sync + 'static,
