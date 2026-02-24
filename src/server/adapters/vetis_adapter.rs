@@ -1,13 +1,16 @@
 use std::future::Future;
 
 use vetis::{
-    config::{ListenerConfig, Protocol, SecurityConfig, ServerConfig, VirtualHostConfig},
+    config::server::{
+        virtual_host::{SecurityConfig, VirtualHostConfig},
+        ListenerConfig, Protocol, ServerConfig,
+    },
     errors::VetisError,
     server::{
-        path::HandlerPath,
-        virtual_host::{handler_fn, VirtualHost},
+        http::{Request, Response},
+        virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
     },
-    Request, Response, Vetis,
+    Vetis,
 };
 
 use crate::{

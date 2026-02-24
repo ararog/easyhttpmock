@@ -2,10 +2,11 @@ use std::future::Future;
 
 use crate::{config::EasyHttpMockConfig, errors::EasyHttpMockError, server::ServerAdapter};
 
-use bytes::Bytes;
 use http::StatusCode;
-use http_body_util::{Either, Full};
-use vetis::{errors::VetisError, Request, Response};
+use vetis::{
+    errors::VetisError,
+    server::http::{Request, Response},
+};
 
 pub mod config;
 pub mod errors;

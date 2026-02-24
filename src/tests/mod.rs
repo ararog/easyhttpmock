@@ -1,4 +1,4 @@
-use vetis::config::Protocol;
+use vetis::config::server::Protocol;
 
 mod config;
 mod server;
