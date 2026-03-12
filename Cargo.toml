@@ -12,6 +12,9 @@ keywords = ["http", "mock", "testing"]
 publish = true
 rust-version = "1.75.0"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
 default = ["tokio-rt", "http2", "tokio-rust-tls"]
 
