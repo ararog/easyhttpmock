@@ -20,9 +20,11 @@ default = ["tokio-rt", "http2", "tokio-rust-tls"]
 
 tokio-rt = ["vetis/tokio-rt", "vetis/__deboa_tokio"]
 smol-rt = ["vetis/smol-rt", "vetis/__deboa_smol"]
+#compio-rt = ["vetis/compio-rt"]
 
 tokio-rust-tls = ["vetis/tokio-rust-tls"]
 smol-rust-tls = ["vetis/smol-rust-tls"]
+#compio-rust-tls = ["vetis/compio-rust-tls"]
 
 http1 = ["vetis/http1"]
 http2 = ["vetis/http2"]
