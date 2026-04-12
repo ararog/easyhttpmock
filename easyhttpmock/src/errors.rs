@@ -4,6 +4,8 @@ use thiserror::Error;
 pub enum EasyHttpMockError {
     #[error("Server error: {0}")]
     Server(#[from] ServerError),
+    #[error("Mock not found")]
+    MockNotFound,
 }
 
 #[derive(Debug, Clone, Error, PartialEq)]

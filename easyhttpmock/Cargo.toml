@@ -1,0 +1,27 @@
+[package]
+name = "easyhttpmock"
+version = "0.1.3-beta.7"
+edition = "2021"
+authors = ["Rogerio Araújo <rogerio.araujo@gmail.com>"]
+repository = "https://github.com/ararog/easyhttpmock"
+homepage = "https://github.com/ararog/easyhttpmock"
+description = "EasyHttpMock is a simple HTTP mock server for testing HTTP clients."
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["http", "mock", "testing"]
+publish = true
+rust-version = "1.75.0"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+
+[dependencies]
+bytes = "1.11.0"
+http = "1.4.0"
+http-body-util = "0.1.3"
+hyper = { version = "1.8.1", features = ["full"] }
+hyper-util = "0.1.9"
+rand = "0.10.0"
+thiserror = "2.0.17"

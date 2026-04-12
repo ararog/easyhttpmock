@@ -1,13 +1,9 @@
 use std::future::Future;
 
-use vetis::{
-    errors::VetisError,
-    server::http::{Request, Response},
+use crate::{
+    errors::EasyHttpMockError,
+    expect::{Then, When},
 };
-
-use crate::errors::EasyHttpMockError;
-
-pub mod adapters;
 
 /// Server adapter trait to allow different http server implementations
 pub trait ServerAdapter {
@@ -49,20 +45,28 @@ pub trait ServerAdapter {
     ///     
     fn config(&self) -> &Self::Config;
 
-    /// Start the server
+    /// Set the mocker to handle incoming requests
     ///
     /// # Arguments
     ///
-    /// * `handler` - The handler function to handle incoming requests
+    /// * `mocker` - The mocker to handle incoming requests
     ///
     /// # Returns
     ///
     /// * `Result<(), EasyHttpMockError>` - The result of the operation
     ///     
-    fn start<H, Fut>(&mut self, handler: H) -> impl Future<Output = Result<(), EasyHttpMockError>>
+    fn mocker<F, Fut>(&mut self, mocker: F)
     where
-        H: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<Response, VetisError>> + Send + Sync + 'static;
+        F: Fn(When) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync + 'static;
+
+    /// Start the server
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), EasyHttpMockError>` - The result of the operation
+    ///     
+    fn start(&mut self) -> impl Future<Output = Result<(), EasyHttpMockError>>;
 
     /// Stop the server
     ///

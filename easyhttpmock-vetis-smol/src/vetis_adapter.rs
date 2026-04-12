@@ -1,23 +1,20 @@
-use std::future::Future;
+use std::{future::Future, sync::Arc};
 
-use vetis::{
-    config::server::{
-        virtual_host::{SecurityConfig, VirtualHostConfig},
-        ListenerConfig, Protocol, ServerConfig,
-    },
+use vetis_smol::{
     errors::VetisError,
-    server::{
-        http::{Request, Response},
-        virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
-    },
-    Vetis,
+    http::Response,
+    listener::ListenerConfig,
+    server::virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
+    virtual_host::{SecurityConfig, VirtualHostConfig},
+    Protocol, ServerConfig, Vetis,
 };
 
-use crate::{
-    config::EasyHttpMockConfig,
+use easyhttpmock::{
     errors::{EasyHttpMockError, ServerError},
+    expect::{Then, When},
+    mock_fn,
     server::{PortGenerator, ServerAdapter},
-    EasyHttpMock,
+    BoxedHandlerClosure,
 };
 
 /// Builder for VetisAdapterConfig
@@ -257,43 +254,13 @@ impl From<VetisAdapterConfig> for ServerConfig {
 pub struct VetisAdapter {
     server: Vetis,
     config: VetisAdapterConfig,
+    mocker: Option<Arc<BoxedHandlerClosure>>,
 }
 
 impl PortGenerator<VetisAdapter> for VetisAdapterConfigBuilder {
     fn with_random_port(self) -> Self {
         let port = rand::random_range(9000..65535);
         self.port(port)
-    }
-}
-
-impl Default for EasyHttpMockConfig<VetisAdapter> {
-    /// Creates a default configuration for the Vetis adapter.
-    ///
-    /// This function sets up a basic server configuration with:
-    /// - Interface: "0.0.0.0"
-    /// - Port: 80
-    /// - No TLS certificates (HTTP only)
-    ///
-    /// # Returns
-    /// A default `EasyHttpMockConfig` configured for the Vetis adapter.  
-    fn default() -> Self {
-        let server_config = VetisAdapterConfig::builder()
-            .interface("0.0.0.0")
-            .cert(None)
-            .key(None)
-            .ca(None)
-            .port(80)
-            .build();
-        EasyHttpMockConfig::<VetisAdapter>::builder()
-            .server_config(server_config.clone())
-            .base_url(format!("http://localhost:{}", 80).into())
-            .build()
-    }
-}
-
-impl Default for EasyHttpMock<VetisAdapter> {
-    fn default() -> Self {
-        EasyHttpMock::new(EasyHttpMockConfig::default()).unwrap()
     }
 }
 
@@ -314,7 +281,7 @@ impl ServerAdapter for VetisAdapter {
 
         let server = Vetis::new(vetis_config);
 
-        Ok(Self { server, config })
+        Ok(Self { server, config, mocker: None })
     }
 
     /// Returns the hostname of the server.
@@ -354,6 +321,24 @@ impl ServerAdapter for VetisAdapter {
         &self.config
     }
 
+    /// Sets the mocker to handle incoming requests.
+    ///
+    /// # Arguments
+    ///
+    /// * `mocker` - The mocker to handle incoming requests.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), EasyHttpMockError>` - The result of the operation.
+    ///
+    fn mocker<F, Fut>(&mut self, mocker: F)
+    where
+        F: Fn(When) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync + 'static,
+    {
+        self.mocker = Some(mock_fn(mocker).into());
+    }
+
     /// Starts the server with the given handler.
     ///
     /// # Arguments
@@ -364,25 +349,55 @@ impl ServerAdapter for VetisAdapter {
     ///
     /// A result indicating whether the server started successfully or a `EasyHttpMockError` if it failed.
     ///
-    /// TODO: Make handler a EasyHttpMockHandler and convert from EasyMockRequest
-    /// and Response to Vetis Request and Response. Maybe have From implementation
-    /// for EasyMockRequest and Response.
-    async fn start<H, Fut>(&mut self, handler: H) -> Result<(), EasyHttpMockError>
-    where
-        H: Fn(Request) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<Response, VetisError>> + Send + Sync + 'static,
-    {
+    async fn start(&mut self) -> Result<(), EasyHttpMockError> {
+        let mocker = match self.mocker.as_ref() {
+            Some(mocker) => mocker,
+            None => return Err(EasyHttpMockError::MockNotFound),
+        };
+
+        let mocker_clone = mocker.clone();
         let path = HandlerPath::builder()
             .uri("/")
-            .handler(handler_fn(handler))
-            .build()
-            .unwrap();
+            .handler(handler_fn(move |request| {
+                // Since handler function is defined here, we need to clone the mocker
+                // to move it into the async block
+                let value = mocker_clone.clone();
+                async move {
+                    let (parts, _body) = request.into_parts();
+                    let when = When::builder()
+                        .path(
+                            parts
+                                .uri
+                                .path()
+                                .to_string(),
+                        )
+                        .method(
+                            parts
+                                .method
+                                .to_string(),
+                        )
+                        .headers(parts.headers)
+                        .body(String::new());
+
+                    let then = value(when).await;
+
+                    if let Err(e) = then {
+                        return Err(VetisError::Handler(e.to_string()));
+                    }
+
+                    let then = then.unwrap();
+                    Ok(Response::builder()
+                        .status(then.status_code())
+                        .text(&then.body()))
+                }
+            }))
+            .build();
 
         let hostname = self.hostname();
 
         let host_config = VirtualHostConfig::builder()
             .hostname(&hostname)
-            .root_directory("src/tests")
+            .root_directory(".")
             .port(self.config.port());
 
         let host_config = if let Some(((cert, key), ca)) = self
@@ -416,7 +431,11 @@ impl ServerAdapter for VetisAdapter {
             .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
 
         let mut host = VirtualHost::new(host_config);
-        host.add_path(path);
+        if let Err(e) = path {
+            return Err(EasyHttpMockError::Server(ServerError::Creation(e.to_string())));
+        }
+
+        host.add_path(path.unwrap());
 
         self.server
             .add_virtual_host(host)
