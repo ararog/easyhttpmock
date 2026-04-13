@@ -3,9 +3,7 @@ use std::{future::Future, sync::Arc};
 use vetis_tokio::{
     errors::VetisError,
     http::Response,
-    listener::ListenerConfig,
-    server::virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
-    virtual_host::{SecurityConfig, VirtualHostConfig},
+    virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
     Protocol, ServerConfig, Vetis,
 };
 
@@ -238,7 +236,7 @@ impl VetisAdapterConfig {
 
 impl From<VetisAdapterConfig> for ServerConfig {
     fn from(config: VetisAdapterConfig) -> Self {
-        let listener_config = ListenerConfig::builder()
+        let listener_config = vetis_tokio::ListenerConfig::builder()
             .interface(&config.interface)
             .protocol(config.protocol)
             .port(config.port)
@@ -395,7 +393,7 @@ impl ServerAdapter for VetisAdapter {
 
         let hostname = self.hostname();
 
-        let host_config = VirtualHostConfig::builder()
+        let host_config = vetis_tokio::VirtualHostConfig::builder()
             .hostname(&hostname)
             .root_directory(".")
             .port(self.config.port());
@@ -415,7 +413,7 @@ impl ServerAdapter for VetisAdapter {
                     .as_ref(),
             ) {
             host_config.security(
-                SecurityConfig::builder()
+                vetis_tokio::SecurityConfig::builder()
                     .cert_from_bytes(cert.clone())
                     .key_from_bytes(key.clone())
                     .ca_cert_from_bytes(ca.clone())

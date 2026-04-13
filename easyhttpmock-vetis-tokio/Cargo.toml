@@ -15,6 +15,13 @@ rust-version = "1.75.0"
 [package.metadata.docs.rs]
 all-features = true
 
+[features]
+http1 = ["vetis-tokio/http1"]
+http2 = ["vetis-tokio/http2"]
+http3 = ["vetis-tokio/http3"]
+
+rust-tls = ["vetis-tokio/rust-tls"]
+
 [dependencies]
 easyhttpmock = { path = "../easyhttpmock" }
 http = "1.4.0"
