@@ -246,6 +246,7 @@ impl From<VetisAdapterConfig> for ServerConfig {
     }
 }
 
+/// Vetis adapter implementation
 pub struct VetisAdapter {
     server: Vetis,
     config: VetisAdapterConfig,

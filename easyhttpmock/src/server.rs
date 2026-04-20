@@ -4,6 +4,7 @@ use crate::{errors::EasyHttpMockError, mock::Mock};
 
 /// Server adapter trait to allow different http server implementations
 pub trait ServerAdapter {
+    /// The configuration for the server adapter
     type Config: Clone;
 
     /// Create a new server adapter
@@ -71,14 +72,17 @@ pub trait ServerAdapter {
     fn stop(&mut self) -> impl Future<Output = Result<(), EasyHttpMockError>>;
 }
 
+/// Port generator trait to allow different port generation strategies
 pub trait PortGenerator<S>
 where
     S: ServerAdapter,
     S::Config: Clone,
 {
+    /// Generate a random port
     fn random_port() -> u16 {
         rand::random_range(9000..65535)
     }
 
+    /// Set the server to use a random port
     fn with_random_port(self) -> Self;
 }

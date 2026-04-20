@@ -1,10 +1,16 @@
+#![doc = include_str!("../README.md")]
+#![deny(missing_docs)]
 use crate::{
     config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::Mock, server::ServerAdapter,
 };
 
+/// Configuration module
 pub mod config;
+/// Error module
 pub mod errors;
+/// Mock module
 pub mod mock;
+/// Server module
 pub mod server;
 
 #[cfg(test)]
@@ -98,12 +104,22 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
             .register_mock(mock);
     }
 
+    /// Start server
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), EasyHttpMockError>` - A result indicating whether the server started successfully
     pub async fn start(&mut self) -> Result<(), EasyHttpMockError> {
         self.server
             .start()
             .await
     }
 
+    /// Assert that the server has stopped
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), EasyHttpMockError>` - A result indicating whether the server stopped successfully
     pub async fn assert(&mut self) -> Result<(), EasyHttpMockError> {
         self.server
             .stop()

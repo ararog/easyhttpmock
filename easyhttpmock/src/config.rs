@@ -56,6 +56,7 @@ where
     }
 }
 
+/// EasyHttpMock server adapter configuration
 #[derive(Clone)]
 pub struct EasyHttpMockConfig<S>
 where
