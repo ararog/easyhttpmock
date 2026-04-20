@@ -1,28 +1,37 @@
-use std::{future::Future, pin::Pin};
-
 use crate::{
-    config::EasyHttpMockConfig,
-    errors::EasyHttpMockError,
-    expect::{Then, When},
-    server::ServerAdapter,
+    config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::Mock, server::ServerAdapter,
 };
 
 pub mod config;
 pub mod errors;
-pub mod expect;
+pub mod mock;
 pub mod server;
 
+#[cfg(test)]
 mod tests;
 
+/// Create a mock using a specific server implementation
 pub struct EasyHttpMock<S>
 where
     S: ServerAdapter,
 {
+    /// Configuration for the mock server
     config: EasyHttpMockConfig<S>,
+    /// The actual server implementation
     server: S,
 }
 
 impl<S: ServerAdapter> EasyHttpMock<S> {
+    /// Creates a new mock with the given configuration
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The configuration for the mock server
+    ///
+    /// # Returns
+    ///
+    /// * `Result<EasyHttpMock<S>, EasyHttpMockError>` - A result indicating whether the mock was created successfully
+    ///
     pub fn new(config: EasyHttpMockConfig<S>) -> Result<EasyHttpMock<S>, EasyHttpMockError> {
         let server = S::new(
             config
@@ -33,6 +42,15 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
         Ok(EasyHttpMock { config, server })
     }
 
+    /// Returns the full URL for a given path
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path to append to the base URL
+    ///
+    /// # Returns
+    ///
+    /// * `String` - The full URL for the given path
     pub fn url(&self, path: &str) -> String {
         if let Some(base_url) = &self.config.base_url {
             format!("{}{}", base_url, path)
@@ -46,19 +64,41 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
         }
     }
 
+    /// Returns the base URL for the mock server
+    ///
+    /// # Returns
+    ///
+    /// * `String` - The base URL for the mock server
+    ///
     pub fn base_url(&self) -> String {
         self.server
             .base_url()
     }
 
-    pub async fn mock<F, Fut>(&mut self, mocker: F) -> Result<(), EasyHttpMockError>
-    where
-        F: Fn(When) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync + 'static,
-    {
+    /// Starts the mock server with the given mocker function
+    ///
+    /// # Arguments
+    ///
+    /// * `mocker` - A function that returns a `Mock` or an error
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), EasyHttpMockError>` - A result indicating whether the mock server started successfully
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// let mut mock = EasyHttpMock::new(EasyHttpMockConfig::builder().build());
+    /// mock.mock(|| async {
+    ///     Ok(Mock::of(Request::get("/test").build()).respond().with_status(200).build())
+    /// }).await?;
+    /// ```
+    pub fn register_mock(&mut self, mock: Mock) {
         self.server
-            .mocker(mocker);
+            .register_mock(mock);
+    }
 
+    pub async fn start(&mut self) -> Result<(), EasyHttpMockError> {
         self.server
             .start()
             .await
@@ -69,52 +109,4 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
             .stop()
             .await
     }
-}
-
-/// Type alias for boxed handler closures.
-///
-/// This represents an async function that takes a `Request` and returns
-/// a `Response` or an error. Handlers are the core of request processing
-/// in VeTiS virtual hosts.
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// use easyhttpmock::{errors::EasyHttpMockError, expect::{When, Then}, BoxedHandlerClosure};
-///
-/// let handler: BoxedHandlerClosure = Box::new(|when: When| {
-///     Box::pin(async move {
-///         // Process request...
-///         Ok(Then::builder()
-///             .status(http::StatusCode::OK)
-///             .body(http_body_util::Full::new(bytes::Bytes::from("OK"))))
-///     })
-/// });
-/// ```
-pub type BoxedHandlerClosure = Box<
-    dyn Fn(When) -> Pin<Box<dyn Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync>>
-        + Send
-        + Sync,
->;
-
-/// Creates a handler closure from a function.
-///
-/// This utility function converts any compatible async function into a
-/// `BoxedHandlerClosure` that can be used with virtual hosts.
-///
-/// # Arguments
-///
-/// * `f` - An async function that takes a `Then` and returns a `Result<Then, EasyHttpMockError>`
-///
-/// # Examples
-///
-/// ```rust,ignore
-///
-/// ```
-pub fn mock_fn<F, Fut>(f: F) -> BoxedHandlerClosure
-where
-    F: Fn(When) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync + 'static,
-{
-    Box::new(move |req| Box::pin(f(req)))
 }

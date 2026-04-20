@@ -1,9 +1,6 @@
 use std::future::Future;
 
-use crate::{
-    errors::EasyHttpMockError,
-    expect::{Then, When},
-};
+use crate::{errors::EasyHttpMockError, mock::Mock};
 
 /// Server adapter trait to allow different http server implementations
 pub trait ServerAdapter {
@@ -55,10 +52,7 @@ pub trait ServerAdapter {
     ///
     /// * `Result<(), EasyHttpMockError>` - The result of the operation
     ///     
-    fn mocker<F, Fut>(&mut self, mocker: F)
-    where
-        F: Fn(When) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync + 'static;
+    fn register_mock(&mut self, mock: Mock);
 
     /// Start the server
     ///

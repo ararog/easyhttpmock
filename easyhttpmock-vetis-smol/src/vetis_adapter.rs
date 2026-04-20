@@ -1,18 +1,15 @@
-use std::{future::Future, sync::Arc};
+use std::sync::{Arc, RwLock};
 
 use vetis_smol::{
-    errors::VetisError,
     http::Response,
     virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
     Protocol, ServerConfig, Vetis,
 };
 
 use easyhttpmock::{
-    errors::{EasyHttpMockError, ServerError},
-    expect::{Then, When},
-    mock_fn,
+    errors::{EasyHttpMockError, MockError, ServerError},
+    mock::{ActualRequest, Mock},
     server::{PortGenerator, ServerAdapter},
-    BoxedHandlerClosure,
 };
 
 /// Builder for VetisAdapterConfig
@@ -252,7 +249,7 @@ impl From<VetisAdapterConfig> for ServerConfig {
 pub struct VetisAdapter {
     server: Vetis,
     config: VetisAdapterConfig,
-    mocker: Option<Arc<BoxedHandlerClosure>>,
+    mock: Option<Arc<RwLock<Mock>>>,
 }
 
 impl PortGenerator<VetisAdapter> for VetisAdapterConfigBuilder {
@@ -279,7 +276,7 @@ impl ServerAdapter for VetisAdapter {
 
         let server = Vetis::new(vetis_config);
 
-        Ok(Self { server, config, mocker: None })
+        Ok(Self { server, config, mock: None })
     }
 
     /// Returns the hostname of the server.
@@ -319,22 +316,18 @@ impl ServerAdapter for VetisAdapter {
         &self.config
     }
 
-    /// Sets the mocker to handle incoming requests.
+    /// Sets the mock to handle incoming requests.
     ///
     /// # Arguments
     ///
-    /// * `mocker` - The mocker to handle incoming requests.
+    /// * `mock` - The mock to handle incoming requests.
     ///
     /// # Returns
     ///
     /// * `Result<(), EasyHttpMockError>` - The result of the operation.
     ///
-    fn mocker<F, Fut>(&mut self, mocker: F)
-    where
-        F: Fn(When) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<Then, EasyHttpMockError>> + Send + Sync + 'static,
-    {
-        self.mocker = Some(mock_fn(mocker).into());
+    fn register_mock(&mut self, mock: Mock) {
+        self.mock = Some(Arc::new(RwLock::new(mock)));
     }
 
     /// Starts the server with the given handler.
@@ -348,45 +341,45 @@ impl ServerAdapter for VetisAdapter {
     /// A result indicating whether the server started successfully or a `EasyHttpMockError` if it failed.
     ///
     async fn start(&mut self) -> Result<(), EasyHttpMockError> {
-        let mocker = match self.mocker.as_ref() {
+        let mock = match self.mock.as_ref() {
             Some(mocker) => mocker,
-            None => return Err(EasyHttpMockError::MockNotFound),
+            None => return Err(MockError::Notfound.into()),
         };
 
-        let mocker_clone = mocker.clone();
+        let mock_clone = mock.clone();
         let path = HandlerPath::builder()
             .uri("/")
             .handler(handler_fn(move |request| {
                 // Since handler function is defined here, we need to clone the mocker
                 // to move it into the async block
-                let value = mocker_clone.clone();
+                let mock = mock_clone.clone();
                 async move {
                     let (parts, _body) = request.into_parts();
-                    let when = When::builder()
-                        .path(
-                            parts
-                                .uri
-                                .path()
-                                .to_string(),
-                        )
-                        .method(
-                            parts
-                                .method
-                                .to_string(),
-                        )
-                        .headers(parts.headers)
-                        .body(String::new());
 
-                    let then = value(when).await;
+                    let mut mock_write_guard = mock
+                        .write()
+                        .unwrap();
 
-                    if let Err(e) = then {
-                        return Err(VetisError::Handler(e.to_string()));
-                    }
+                    mock_write_guard.match_with(
+                        ActualRequest::builder()
+                            .path(parts.uri.path())
+                            .method(parts.method)
+                            .headers(parts.headers)
+                            .build(),
+                    );
 
-                    let then = then.unwrap();
+                    mock_write_guard.report_call();
+
+                    drop(mock_write_guard);
+
+                    let mock_read_guard = mock.read().unwrap();
+                    let respond = mock_read_guard
+                        .request()
+                        .respond();
+
                     Ok(Response::builder()
-                        .status(then.status_code())
-                        .text(&then.body()))
+                        .status(respond.status_code())
+                        .bytes(&respond.body()))
                 }
             }))
             .build();

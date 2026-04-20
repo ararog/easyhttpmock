@@ -4,4 +4,8 @@
 # exit 0
 cargo fmt --check
 
-# cargo test
+cd easyhttpmock
+
+cargo test
+
+cd ..
