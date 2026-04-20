@@ -3,6 +3,6 @@
 /// Vetis smol adapter module
 pub mod vetis_adapter;
 pub use easyhttpmock::*;
-pub use vetis_smol::Protocol;
+pub use vetis_smol::{handler_fn, Protocol};
 #[cfg(test)]
 mod tests;

@@ -2840,10 +2840,10 @@ dependencies = [
 name = "vetis-smol"
 version = "0.1.0-beta.1"
 dependencies = [
+ "async-lock",
  "async-native-tls",
  "async-signal",
  "bytes",
- "cfg-if",
  "clap",
  "deboa",
  "env_logger",
@@ -2884,7 +2884,6 @@ version = "0.1.0-beta.1"
 dependencies = [
  "async-lock",
  "bytes",
- "cfg-if",
  "clap",
  "deboa",
  "env_logger",

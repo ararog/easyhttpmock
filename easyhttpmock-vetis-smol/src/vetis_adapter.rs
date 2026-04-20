@@ -1,8 +1,9 @@
 use std::sync::{Arc, RwLock};
 
 use vetis_smol::{
+    handler_fn,
     http::Response,
-    virtual_host::{handler_fn, path::HandlerPath, VirtualHost},
+    virtual_host::{path::HandlerPath, VirtualHost},
     Protocol, ServerConfig, Vetis,
 };
 
