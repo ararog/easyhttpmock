@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use vetis_tokio::{
     handler_fn,
     http::Response,
-    virtual_host::{path::HandlerPath, VirtualHost},
+    virtual_host::{path::HandlerPath, VirtualHostImpl},
     Protocol, ServerConfig, Vetis,
 };
 
@@ -423,7 +423,7 @@ impl ServerAdapter for VetisAdapter {
             .build()
             .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
 
-        let mut host = VirtualHost::new(host_config);
+        let mut host = VirtualHostImpl::new(host_config);
         if let Err(e) = path {
             return Err(EasyHttpMockError::Server(ServerError::Creation(e.to_string())));
         }
