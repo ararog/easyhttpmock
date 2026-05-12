@@ -8,6 +8,9 @@ members = [
   "easyhttpmock-vetis-tokio",
 ]
 
+[workspace.dependencies]
+easyhttpmock = { path = "easyhttpmock" }
+
 [profile.release]
 strip = true
 opt-level = "z"

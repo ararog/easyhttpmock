@@ -23,7 +23,7 @@ http3 = ["vetis-smol/http3"]
 rust-tls = ["vetis-smol/rust-tls"]
 
 [dependencies]
-easyhttpmock = { path = "../easyhttpmock" }
+easyhttpmock = { workspace = true }
 googletest = "0.14.2"
 http = "1.4.0"
 macro_rules_attribute = "0.2.2"

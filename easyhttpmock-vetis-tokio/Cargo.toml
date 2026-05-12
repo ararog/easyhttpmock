@@ -23,7 +23,7 @@ http3 = ["vetis-tokio/http3"]
 rust-tls = ["vetis-tokio/rust-tls"]
 
 [dependencies]
-easyhttpmock = { path = "../easyhttpmock" }
+easyhttpmock = { workspace = true }
 googletest = "0.14.2"
 http = "1.4.0"
 rand = "0.9.2"
