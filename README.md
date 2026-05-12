@@ -5,7 +5,7 @@
 
 **The effortless HTTP mock server for seamless API testing**
 
-**EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. Built on top of [VeTiS](https://github.com/ararog/vetis), it provides a clean, intuitive API for creating realistic mock endpoints that simulate real-world API behavior, making your testing workflow faster and more reliable.
+**EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. Built to work with any web server, it provides a clean, intuitive API for creating realistic mock endpoints that simulate real-world API behavior, making your testing workflow faster and more reliable.
 
 ## Why EasyHttpMock?
 
@@ -113,20 +113,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **Debugging**: Reproduce API issues in a controlled environment
 - **Documentation**: Create interactive API examples
 
-## Supported Runtimes
+## Supported Runtimes (via crates)
 
 - [tokio](https://github.com/tokio-rs/tokio) - High-performance async runtime
 - [smol](https://github.com/smol-rs/smol) - Lightweight async runtime
 
 ## Crate Features
 
-- **tokio-rt** (default) - Tokio runtime support
-- **smol-rt** - Smol runtime support  
 - **http1** - HTTP/1 protocol support
 - **http2** (default) - HTTP/2 protocol support
 - **http3** - HTTP/3 protocol support
-- **tokio-rust-tls** (default) - TLS support for Tokio
-- **smol-rust-tls** - TLS support for Smol
+- **rust-tls** (default) - TLS support
 
 ## License
 
