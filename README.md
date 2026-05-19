@@ -20,7 +20,7 @@
 
 Add EasyHttpMock to your `Cargo.toml`:
 
-```rust
+```toml
 easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http2", "tokio-rust-tls"] }
 ```
 
