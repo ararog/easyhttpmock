@@ -568,7 +568,7 @@ checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
 
 [[package]]
 name = "deboa"
-version = "0.1.0-beta.16"
+version = "0.1.0-beta.17"
 dependencies = [
  "async-trait",
  "base64",
@@ -599,7 +599,7 @@ dependencies = [
 
 [[package]]
 name = "deboa-tokio"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "async-trait",
  "base64",
@@ -1217,7 +1217,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-body-utils"
-version = "0.1.6-beta.7"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6119ecb58bafa9e02715d3ad46be58c769065082e8bf92291cc8a6e1dabc01ca"
 dependencies = [
  "bytes",
  "futures",
@@ -1225,11 +1227,6 @@ dependencies = [
  "h3-quinn",
  "http-body-util",
  "hyper",
- "macro_rules_attribute",
- "smol",
- "smol-macros",
- "tokio",
- "tokio-util",
 ]
 
 [[package]]
@@ -3021,7 +3018,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vetis"
-version = "0.1.4-beta.5"
+version = "0.1.4-beta.7"
 dependencies = [
  "argon2",
  "async-lock",
@@ -3058,7 +3055,6 @@ dependencies = [
  "async-signal",
  "bytes",
  "clap",
- "deboa",
  "env_logger",
  "futures-lite",
  "futures-rustls",
@@ -3098,7 +3094,6 @@ dependencies = [
  "async-lock",
  "bytes",
  "clap",
- "deboa",
  "env_logger",
  "futures-rustls",
  "futures-util",
