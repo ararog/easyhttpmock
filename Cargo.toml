@@ -18,7 +18,7 @@ license = "MIT OR Apache-2.0"
 rust-version = "1.75.0"
 
 [workspace.dependencies]
-easyhttpmock = { path = "easyhttpmock" }
+easyhttpmock = { version = "0.1.3-beta.9", path = "easyhttpmock" }
 
 [profile.release]
 strip = true

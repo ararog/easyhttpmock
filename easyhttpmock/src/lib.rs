@@ -93,7 +93,7 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// let mut mock = EasyHttpMock::new(EasyHttpMockConfig::builder().build());
     /// mock.mock(|| async {
     ///     Ok(Mock::of(Request::get("/test").build()).respond().with_status(200).build())

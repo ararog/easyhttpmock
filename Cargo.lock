@@ -687,7 +687,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "easyhttpmock"
-version = "0.1.3-beta.7"
+version = "0.1.3-beta.9"
 dependencies = [
  "bytes",
  "googletest",
@@ -3019,6 +3019,8 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vetis"
 version = "0.1.4-beta.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aec48a57e664a76705283f30ef38d533e7f854133e627e29f20943f41fb702f9"
 dependencies = [
  "argon2",
  "async-lock",
@@ -3048,6 +3050,8 @@ dependencies = [
 [[package]]
 name = "vetis-smol"
 version = "0.1.0-beta.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74894eed29cf16fdb72cecb091edc607376886b875d9ae0437453d0f4a43b955"
 dependencies = [
  "async-lock",
  "async-native-tls",
@@ -3090,6 +3094,8 @@ dependencies = [
 [[package]]
 name = "vetis-tokio"
 version = "0.1.0-beta.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44162bb36dc84d998d2684f57cda750b18adb210a98ce5f037bff7f92d52edf6"
 dependencies = [
  "async-lock",
  "bytes",
