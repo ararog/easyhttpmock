@@ -14,7 +14,14 @@ easyhttpmock = { version = "0.1.0" }
 
 ## License
 
-MIT
+Licensed under either of
+
+- Apache License, Version 2.0
+  (LICENSE-APACHE or https://www.apache.org/licenses/LICENSE-2.0)
+- MIT license
+  (LICENSE-MIT or https://opensource.org/licenses/MIT)
+
+at your option.
 
 ## Author
 

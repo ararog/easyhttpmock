@@ -1,35 +1,33 @@
-use http::StatusCode;
+use std::error::Error;
 
 use easyhttpmock::{
-    EasyHttpMock,
     config::EasyHttpMockConfig,
-    server::{
-        PortGenerator,
-        adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
-    },
+    mock::{MethodExt, Mock, StatusCodeExt},
+    server::PortGenerator,
+    EasyHttpMock,
 };
+use http::{Method, StatusCode};
 
-use deboa::{
-    Client,
-    cert::{Certificate, ContentEncoding},
-    request::DeboaRequest,
-};
-
-use vetis::Response;
+use easyhttpmock_vetis_tokio::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
+use vetis_tokio::Protocol;
 
 pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
-pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
 
 pub const SERVER_CERT: &[u8] = include_bytes!("../certs/server.der");
 pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let server_cert = SERVER_CERT;
+    let server_key = SERVER_KEY;
+
     let vetis_adapter_config = VetisAdapterConfig::builder()
+        .hostname(Some("localhost".to_string()))
         .interface("0.0.0.0")
+        .protocol(Protocol::Http2)
         .with_random_port()
-        .cert(Some(SERVER_CERT.to_vec()))
-        .key(Some(SERVER_KEY.to_vec()))
+        .cert(Some(server_cert.to_vec()))
+        .key(Some(server_key.to_vec()))
         .ca(Some(CA_CERT.to_vec()))
         .build();
 
@@ -37,38 +35,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .server_config(vetis_adapter_config)
         .build();
 
-    let mut server = EasyHttpMock::new(config)?;
-    #[allow(unused_must_use)]
-    let result = server
-        .start(|_| async move {
-            Ok(Response::builder()
-                .status(StatusCode::OK)
-                .text("Hello World"))
-        })
-        .await;
+    let server = EasyHttpMock::new(config);
+    let mut server = match server {
+        Ok(server) => server,
+        Err(err) => {
+            panic!("Failed to create mock server: {}", err);
+        }
+    };
 
-    result.unwrap_or_else(|err| {
-        panic!("Failed to start mock server: {}", err);
-    });
+    let mock = Mock::of(
+        Method::GET
+            .has()
+            .path("/test")
+            .will_return(
+                StatusCode::OK
+                    .respond()
+                    .with_body(b"teste"),
+            ),
+    );
 
-    let client = Client::builder()
-        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
-        .build();
-
-    let url = server.url("/anything");
-    let request = DeboaRequest::get(url)?.build()?;
-
-    let response = client
-        .execute(request)
-        .await?;
-
-    if response.status() == StatusCode::OK {
-        println!("Request executed successfully");
-    }
-
-    server
-        .stop()
-        .await?;
+    server.register_mock(mock);
 
     Ok(())
 }
