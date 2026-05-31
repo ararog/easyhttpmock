@@ -1,5 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
+use std::ops::{Deref, DerefMut};
+
 use crate::{
     config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::Mock, server::ServerAdapter,
 };
@@ -25,6 +27,20 @@ where
     config: EasyHttpMockConfig<S>,
     /// The actual server implementation
     server: S,
+}
+
+impl<S: ServerAdapter> Deref for EasyHttpMock<S> {
+    type Target = S;
+
+    fn deref(&self) -> &Self::Target {
+        &self.server
+    }
+}
+
+impl<S: ServerAdapter> DerefMut for EasyHttpMock<S> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.server
+    }
 }
 
 impl<S: ServerAdapter> EasyHttpMock<S> {
