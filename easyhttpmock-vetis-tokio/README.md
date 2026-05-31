@@ -30,10 +30,10 @@ use http::{Method, StatusCode};
 use easyhttpmock_vetis_tokio::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
 use vetis_tokio::Protocol;
 
-const CA_CERT: &[u8] = include_bytes!("../../../certs/ca.der");
+const CA_CERT: &[u8] = include_bytes!("../../certs/ca.der");
 
-const SERVER_CERT: &[u8] = include_bytes!("../../../certs/server.der");
-const SERVER_KEY: &[u8] = include_bytes!("../../../certs/server.key.der");
+const SERVER_CERT: &[u8] = include_bytes!("../../certs/server.der");
+const SERVER_KEY: &[u8] = include_bytes!("../../certs/server.key.der");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

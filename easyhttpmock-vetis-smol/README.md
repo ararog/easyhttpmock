@@ -34,14 +34,14 @@ use easyhttpmock_vetis_smol::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
 use vetis_smol::Protocol;
 
 use macro_rules_attribute::apply;
-use smol_macros::test;
+use smol_macros::main;
 
-const CA_CERT: &[u8] = include_bytes!("../../../certs/ca.der");
+const CA_CERT: &[u8] = include_bytes!("../../certs/ca.der");
 
-const SERVER_CERT: &[u8] = include_bytes!("../../../certs/server.der");
-const SERVER_KEY: &[u8] = include_bytes!("../../../certs/server.key.der");
+const SERVER_CERT: &[u8] = include_bytes!("../../certs/server.der");
+const SERVER_KEY: &[u8] = include_bytes!("../../certs/server.key.der");
 
-#[apply(test!)]
+#[apply(main!)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_cert = SERVER_CERT;
     let server_key = SERVER_KEY;
