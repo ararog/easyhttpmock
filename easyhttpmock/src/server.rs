@@ -1,4 +1,4 @@
-use std::future::Future;
+use std::{future::Future, sync::Arc};
 
 use crate::{errors::EasyHttpMockError, mock::Mock};
 
@@ -53,7 +53,7 @@ pub trait ServerAdapter {
     ///
     /// * `Result<(), EasyHttpMockError>` - The result of the operation
     ///     
-    fn register_mock(&mut self, mock: Mock);
+    fn register_mock(&mut self, mock: Arc<Mock>);
 
     /// Start the server
     ///

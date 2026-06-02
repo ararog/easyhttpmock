@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use deboa::{request::get, HttpClient};
+use deboa_smol::cert::{Certificate, ContentEncoding};
 use easyhttpmock::{
     config::EasyHttpMockConfig,
     mock::{MethodExt, Mock, StatusCodeExt},
@@ -46,7 +48,7 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    let mock = Mock::of(
+    Mock::of(
         Method::GET
             .has()
             .path("/test")
@@ -55,9 +57,24 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
                     .respond()
                     .with_body(b"teste"),
             ),
-    );
+    )
+    .use_on(&mut server)
+    .await?;
 
-    server.register_mock(mock);
+    let client = deboa_smol::Client::builder()
+        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
+        .build();
+
+    let request = get(server.url("/test"))?.build()?;
+    let response = client
+        .execute(request)
+        .await?;
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    server
+        .stop()
+        .await?;
 
     Ok(())
 }

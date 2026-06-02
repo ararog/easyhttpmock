@@ -1,3 +1,5 @@
+use caramelo::assertions::{Is, IsEq};
+
 use crate::{
     config::EasyHttpMockConfig,
     tests::server::{TestServer, TestServerConfig},
@@ -10,22 +12,17 @@ fn test_config() {
         .server_config(TestServerConfig::default())
         .build();
 
-    assert_eq!(
-        config
-            .server_config()
-            .port(),
-        8080
-    );
-    assert_eq!(
-        config
-            .server_config()
-            .interface(),
-        "127.0.0.1"
-    );
+    config
+        .server_config()
+        .port()
+        .is_eq(&8080);
 
-    assert_eq!(
-        config.base_url(),
-        &Some("http://127.0.0.1:8080".to_string()),
-        "base url should be http://127.0.0.1:8080"
-    );
+    config
+        .server_config()
+        .interface()
+        .is_eq(&"127.0.0.1");
+
+    config
+        .base_url()
+        .is(Some("http://127.0.0.1:8080".to_string()));
 }

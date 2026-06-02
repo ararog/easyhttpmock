@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use vetis_smol::{
     handler_fn,
@@ -9,8 +9,9 @@ use vetis_smol::{
 
 use easyhttpmock::{
     errors::{EasyHttpMockError, MockError, ServerError},
-    mock::{ActualRequest, Mock},
+    mock::{Mock, Request},
     server::{PortGenerator, ServerAdapter},
+    HttpMockResult,
 };
 
 /// Builder for VetisAdapterConfig
@@ -251,7 +252,7 @@ impl From<VetisAdapterConfig> for ServerConfig {
 pub struct VetisAdapter {
     server: Vetis,
     config: VetisAdapterConfig,
-    mock: Option<Arc<RwLock<Mock>>>,
+    mock: Option<Arc<Mock>>,
 }
 
 impl PortGenerator<VetisAdapter> for VetisAdapterConfigBuilder {
@@ -262,6 +263,7 @@ impl PortGenerator<VetisAdapter> for VetisAdapterConfigBuilder {
 }
 
 impl ServerAdapter for VetisAdapter {
+    /// The configuration type for the adapter.
     type Config = VetisAdapterConfig;
 
     /// Creates a new VetisAdapter instance.
@@ -328,8 +330,8 @@ impl ServerAdapter for VetisAdapter {
     ///
     /// * `Result<(), EasyHttpMockError>` - The result of the operation.
     ///
-    fn register_mock(&mut self, mock: Mock) {
-        self.mock = Some(Arc::new(RwLock::new(mock)));
+    fn register_mock(&mut self, mock: Arc<Mock>) {
+        self.mock = Some(mock);
     }
 
     /// Starts the server with the given handler.
@@ -342,7 +344,7 @@ impl ServerAdapter for VetisAdapter {
     ///
     /// A result indicating whether the server started successfully or a `EasyHttpMockError` if it failed.
     ///
-    async fn start(&mut self) -> Result<(), EasyHttpMockError> {
+    async fn start(&mut self) -> HttpMockResult<()> {
         let mock = match self.mock.as_ref() {
             Some(mocker) => mocker,
             None => return Err(MockError::Notfound.into()),
@@ -358,30 +360,27 @@ impl ServerAdapter for VetisAdapter {
                 async move {
                     let (parts, _body) = request.into_parts();
 
-                    let mut mock_write_guard = mock
-                        .write()
-                        .unwrap();
-
-                    mock_write_guard.match_with(
-                        ActualRequest::builder()
+                    mock.match_with(
+                        Request::builder(parts.method)
                             .path(parts.uri.path())
-                            .method(parts.method)
                             .headers(parts.headers)
+                            .body(Vec::new().as_slice())
                             .build(),
                     );
 
-                    mock_write_guard.report_call();
-
-                    drop(mock_write_guard);
-
-                    let mock_read_guard = mock.read().unwrap();
-                    let respond = mock_read_guard
+                    let respond = mock
                         .request()
                         .respond();
 
-                    Ok(Response::builder()
-                        .status(respond.status_code())
-                        .bytes(&respond.body()))
+                    if let Some(respond) = respond {
+                        Ok(Response::builder()
+                            .status(respond.status_code())
+                            .bytes(&respond.body()))
+                    } else {
+                        Err(vetis_smol::errors::VetisError::Handler(
+                            "Missing respond mock".to_string(),
+                        ))
+                    }
                 }
             }))
             .build();
@@ -444,7 +443,7 @@ impl ServerAdapter for VetisAdapter {
     ///
     /// # Returns
     /// A result indicating whether the server stopped successfully.
-    async fn stop(&mut self) -> Result<(), EasyHttpMockError> {
+    async fn stop(&mut self) -> HttpMockResult<()> {
         self.server
             .stop()
             .await

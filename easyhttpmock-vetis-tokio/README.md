@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ),
     );
 
-    server.register_mock(mock);
+    server.register_mock(&mock);
 
     Ok(())
 }

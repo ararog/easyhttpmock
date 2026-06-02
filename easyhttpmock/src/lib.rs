@@ -3,7 +3,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::Mock, server::ServerAdapter,
+    config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::MockState, server::ServerAdapter,
 };
 
 /// Configuration module
@@ -18,7 +18,22 @@ pub mod server;
 #[cfg(test)]
 mod tests;
 
+/// Result type for HTTP mock operations
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let result: HttpMockResult<()> = Ok(());
+/// ```
+pub type HttpMockResult<T> = Result<T, EasyHttpMockError>;
+
 /// Create a mock using a specific server implementation
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let mut server = EasyHttpMock::new(EasyHttpMockConfig::builder().build());
+/// ```
 pub struct EasyHttpMock<S>
 where
     S: ServerAdapter,
@@ -110,33 +125,33 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
     /// # Examples
     ///
     /// ```rust,ignore
-    /// let mut mock = EasyHttpMock::new(EasyHttpMockConfig::builder().build());
-    /// mock.mock(|| async {
-    ///     Ok(Mock::of(Request::get("/test").build()).respond().with_status(200).build())
-    /// }).await?;
+    /// let mut server = EasyHttpMock::new(EasyHttpMockConfig::builder().build());
+    /// let mock = Mock::of(
+    ///     Method::GET
+    ///         .has()
+    ///         .path("/test")
+    ///         .will_return(
+    ///             StatusCode::OK
+    ///                 .respond()
+    ///                 .with_body(b"teste"),
+    ///         ),
+    /// );
+    ///
+    /// server.register_mock(&mock);
     /// ```
-    pub fn register_mock(&mut self, mock: Mock) {
+    pub async fn register_mock(&mut self, mock: &MockState) -> HttpMockResult<()> {
         self.server
-            .register_mock(mock);
+            .register_mock(mock.inner());
+
+        self.start().await
     }
 
-    /// Start server
-    ///
-    /// # Returns
-    ///
-    /// * `Result<(), EasyHttpMockError>` - A result indicating whether the server started successfully
-    pub async fn start(&mut self) -> Result<(), EasyHttpMockError> {
-        self.server
-            .start()
-            .await
-    }
-
-    /// Assert that the server has stopped
+    /// Stop server
     ///
     /// # Returns
     ///
     /// * `Result<(), EasyHttpMockError>` - A result indicating whether the server stopped successfully
-    pub async fn assert(&mut self) -> Result<(), EasyHttpMockError> {
+    pub async fn stop(&mut self) -> HttpMockResult<()> {
         self.server
             .stop()
             .await

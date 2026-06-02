@@ -1,38 +1,65 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use bytes::Bytes;
+use caramelo::{expect, matchers::eq};
 use http::{HeaderMap, Method, StatusCode};
+
+use crate::{server::ServerAdapter, EasyHttpMock, HttpMockResult};
+
+/// State container for mock data
+pub struct MockState {
+    inner: Arc<Mock>,
+}
+
+impl MockState {
+    #[inline]
+    /// Create a new mock state
+    pub fn new(mock: Mock) -> Self {
+        Self { inner: Arc::new(mock) }
+    }
+
+    /// Get a clone of the internal data Arc
+    #[inline]
+    pub fn inner(&self) -> Arc<Mock> {
+        self.inner.clone()
+    }
+
+    /// Set the respond for this request
+    pub async fn use_on<S: ServerAdapter>(
+        self,
+        server: &mut EasyHttpMock<S>,
+    ) -> HttpMockResult<Self> {
+        server
+            .register_mock(&self)
+            .await?;
+
+        Ok(self)
+    }
+}
 
 /// Mock struct
 pub struct Mock {
     request: Request,
-    count: u32,
-    match_request: Option<ActualRequest>,
 }
 
 impl Mock {
     #[inline]
     /// Create a new mock
-    pub fn of(request: Request) -> Self {
-        Self { request, count: 0, match_request: None }
+    pub fn of(request: Request) -> MockState {
+        MockState::new(Self { request })
     }
 
     #[inline]
-    /// Report a call to this mock
-    pub fn report_call(&mut self) {
-        self.count += 1;
-    }
-
-    #[inline]
-    /// Get the request that matched this mock
+    /// Get the request
     pub fn request(&self) -> &Request {
         &self.request
     }
 
     #[inline]
     /// Match this mock with an actual request
-    pub fn match_with(&mut self, request: ActualRequest) {
-        self.match_request = Some(request);
+    pub fn match_with(&self, request: Request) {
+        // TODO: Implement matching logic
+        expect(&self.request).to_be(eq(&request));
     }
 }
 
@@ -102,124 +129,13 @@ impl MethodExt for &str {
     }
 }
 
-/// Builder for creating actual HTTP requests to be matched against mocks
-pub struct ActualRequestBuilder {
-    path: String,
-    method: Method,
-    headers: HeaderMap,
-    query_params: HashMap<String, String>,
-    body: String,
-}
-
-impl ActualRequestBuilder {
-    #[inline]
-    /// Set the path for this request
-    pub fn path(mut self, path: &str) -> Self {
-        self.path = path.to_string();
-        self
-    }
-
-    #[inline]
-    /// Set the method for this request
-    pub fn method(mut self, method: Method) -> Self {
-        self.method = method;
-        self
-    }
-
-    #[inline]
-    /// Set the headers for this request
-    pub fn headers(mut self, headers: HeaderMap) -> Self {
-        self.headers = headers;
-        self
-    }
-
-    #[inline]
-    /// Set the query parameters for this request
-    pub fn query_params(mut self, query_params: HashMap<String, String>) -> Self {
-        self.query_params = query_params;
-        self
-    }
-
-    #[inline]
-    /// Set the body for this request
-    pub fn body(mut self, body: &str) -> Self {
-        self.body = body.to_string();
-        self
-    }
-
-    #[inline]
-    /// Build the actual request
-    pub fn build(self) -> ActualRequest {
-        ActualRequest {
-            path: self.path,
-            method: self.method,
-            headers: self.headers,
-            query_params: self.query_params,
-            body: self.body,
-        }
-    }
-}
-
-/// Represents an actual HTTP request that will be matched against mocks
-pub struct ActualRequest {
-    path: String,
-    method: Method,
-    headers: HeaderMap,
-    query_params: HashMap<String, String>,
-    body: String,
-}
-
-impl ActualRequest {
-    #[inline]
-    /// Create a new actual request builder
-    pub fn builder() -> ActualRequestBuilder {
-        ActualRequestBuilder {
-            path: String::new(),
-            method: Method::GET,
-            headers: HeaderMap::new(),
-            query_params: HashMap::new(),
-            body: String::new(),
-        }
-    }
-
-    #[inline]
-    /// Get the path
-    pub fn path(&self) -> &str {
-        &self.path
-    }
-
-    #[inline]
-    /// Get the method
-    pub fn method(&self) -> &Method {
-        &self.method
-    }
-
-    #[inline]
-    /// Get the headers
-    pub fn headers(&self) -> &HeaderMap {
-        &self.headers
-    }
-
-    #[inline]
-    /// Get the query params
-    pub fn query_params(&self) -> &HashMap<String, String> {
-        &self.query_params
-    }
-
-    #[inline]
-    /// Get the body
-    pub fn body(&self) -> &str {
-        &self.body
-    }
-}
-
 /// Builder for creating mock requests
 pub struct RequestBuilder {
     path: String,
     method: Method,
-    headers: HeaderMap,
-    query_params: HashMap<String, String>,
-    body: Bytes,
+    headers: Option<HeaderMap>,
+    query_params: Option<HashMap<String, String>>,
+    body: Option<Bytes>,
 }
 
 impl RequestBuilder {
@@ -240,22 +156,35 @@ impl RequestBuilder {
     #[inline]
     /// Set the headers for this request
     pub fn headers(mut self, headers: HeaderMap) -> Self {
-        self.headers = headers;
+        self.headers = Some(headers);
         self
     }
 
     #[inline]
     /// Set the query parameters for this request
     pub fn query_params(mut self, query_params: HashMap<String, String>) -> Self {
-        self.query_params = query_params;
+        self.query_params = Some(query_params);
         self
     }
 
     #[inline]
     /// Set the body for this request
     pub fn body(mut self, body: &[u8]) -> Self {
-        self.body = Bytes::from(body.to_vec());
+        self.body = Some(Bytes::from(body.to_vec()));
         self
+    }
+
+    #[inline]
+    /// Build the request
+    pub fn build(self) -> Request {
+        Request {
+            path: self.path,
+            method: self.method,
+            headers: self.headers,
+            query_params: self.query_params,
+            body: self.body,
+            respond: None,
+        }
     }
 
     #[inline]
@@ -267,19 +196,64 @@ impl RequestBuilder {
             headers: self.headers,
             query_params: self.query_params,
             body: self.body,
-            respond,
+            respond: Some(respond),
         }
     }
 }
 
 /// Represents a mock HTTP request
+#[derive(Clone)]
 pub struct Request {
     path: String,
     method: Method,
-    headers: HeaderMap,
-    query_params: HashMap<String, String>,
-    body: Bytes,
-    respond: Respond,
+    headers: Option<HeaderMap>,
+    query_params: Option<HashMap<String, String>>,
+    body: Option<Bytes>,
+    respond: Option<Respond>,
+}
+
+impl Debug for Request {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Request")
+            .field("path", &self.path)
+            .field("method", &self.method)
+            .field("headers", &self.headers)
+            .field("query_params", &self.query_params)
+            .field("body", &self.body)
+            .finish()
+    }
+}
+
+impl PartialEq for Request {
+    fn eq(&self, other: &Self) -> bool {
+        let result = self.path == other.path && self.method == other.method;
+
+        if let Some(headers) = &self.headers {
+            if let Some(other_headers) = &other.headers {
+                if headers != other_headers {
+                    return false;
+                }
+            }
+        }
+
+        if let Some(query_params) = &self.query_params {
+            if let Some(other_query_params) = &other.query_params {
+                if query_params != other_query_params {
+                    return false;
+                }
+            }
+        }
+
+        if let Some(body) = &self.body {
+            if let Some(other_body) = &other.body {
+                if body != other_body {
+                    return false;
+                }
+            }
+        }
+
+        result
+    }
 }
 
 impl Request {
@@ -289,9 +263,9 @@ impl Request {
         RequestBuilder {
             path: String::new(),
             method,
-            headers: HeaderMap::new(),
-            query_params: HashMap::new(),
-            body: Bytes::new(),
+            headers: None,
+            query_params: None,
+            body: None,
         }
     }
 
@@ -308,26 +282,26 @@ impl Request {
     }
 
     #[inline]
+    /// Get the headers
+    pub fn headers(&self) -> &Option<HeaderMap> {
+        &self.headers
+    }
+
+    #[inline]
     /// Get the query params
-    pub fn query_params(&self) -> &HashMap<String, String> {
+    pub fn query_params(&self) -> &Option<HashMap<String, String>> {
         &self.query_params
     }
 
     #[inline]
     /// Get the body
-    pub fn body(&self) -> &Bytes {
+    pub fn body(&self) -> &Option<Bytes> {
         &self.body
     }
 
     #[inline]
-    /// Get the headers
-    pub fn headers(&self) -> &HeaderMap {
-        &self.headers
-    }
-
-    #[inline]
     /// Get the respond
-    pub fn respond(&self) -> &Respond {
+    pub fn respond(&self) -> &Option<Respond> {
         &self.respond
     }
 }
@@ -388,6 +362,7 @@ impl RespondBuilder {
 }
 
 /// Represents how to respond for a request
+#[derive(Clone)]
 pub struct Respond {
     status_code: StatusCode,
     headers: HashMap<String, String>,

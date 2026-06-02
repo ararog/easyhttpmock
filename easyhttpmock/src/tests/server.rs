@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 
 use crate::{errors::EasyHttpMockError, mock::Mock, server::ServerAdapter, EasyHttpMock};
 
@@ -26,7 +26,7 @@ impl TestServerConfig {
 
 pub struct TestServer {
     config: TestServerConfig,
-    mock: Option<Mock>,
+    mock: Option<Arc<Mock>>,
 }
 
 impl ServerAdapter for TestServer {
@@ -48,7 +48,7 @@ impl ServerAdapter for TestServer {
         &self.config
     }
 
-    fn register_mock(&mut self, mock: Mock) {
+    fn register_mock(&mut self, mock: Arc<Mock>) {
         self.mock = Some(mock);
     }
 

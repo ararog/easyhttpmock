@@ -77,9 +77,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .respond()
                     .with_body(b"teste"),
             ),
-    );
+    )
+    .use_on(&mut server)
+    .await?;
 
-    server.register_mock(mock);
+    // TODO: Make a request to the server and assert the response
+
+    server.stop().await?;
 
     Ok(())
 }
