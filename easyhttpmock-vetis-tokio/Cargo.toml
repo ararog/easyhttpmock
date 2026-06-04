@@ -26,7 +26,7 @@ rust-tls = ["vetis-tokio/rust-tls"]
 caramelo = "0.1.0"
 easyhttpmock = { workspace = true }
 http = "1.4.0"
-rand = "0.9.2"
+rand = "0.10.0"
 tokio = "1.50.0"
 vetis-tokio = { version = "0.1.0-beta.2", features = [
   "http2",
