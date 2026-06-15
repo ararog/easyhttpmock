@@ -55,7 +55,6 @@ use vetis::Response;
 
 pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
 pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
-
 pub const SERVER_CERT: &[u8] = include_bytes!("../certs/server.der");
 pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
 
@@ -105,6 +104,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }    
 ```
+
+## Crates
+
+| Crate | Description | Documentation |
+|-------|-------------|---------------|
+| [easyhttpmock](./easyhttpmock) | Core HTTP server library | [![docs.rs](https://img.shields.io/docsrs/easyhttpmock/latest)](https://docs.rs/easyhttpmock) |
+| [easyhttpmock-vetis-smol](./easyhttpmock-vetis-smol) | Smol runtime support | [![docs.rs](https://img.shields.io/docsrs/easyhttpmock-vetis-smol/latest)](https://docs.rs/easyhttpmock-vetis-smol) |
+| [easyhttpmock-vetis-tokio](./easyhttpmock-vetis-tokio) | Tokio runtime support | [![docs.rs](https://img.shields.io/docsrs/easyhttpmock-vetis-tokio/latest)](https://docs.rs/easyhttpmock-vetis-tokio) |
 
 ## Examples
 

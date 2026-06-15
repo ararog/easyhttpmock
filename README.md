@@ -125,6 +125,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **http3** - HTTP/3 protocol support
 - **rust-tls** (default) - TLS support
 
+## Subprojects
+
+### [easyhttpmock](https://github.com/ararog/easyhttpmock)
+
+Base crate for easyhttpmock.
+
+### [easyhttpmock-vetis-smol](https://github.com/ararog/easyhttpmock-vetis-smol)
+
+Adapter for vetis using smol runtime.
+
+### [easyhttpmock-vetis-tokio](https://github.com/ararog/easyhttpmock-vetis-tokio)
+
+Adapter for vetis using tokio runtime.
+
 ## License
 
 Licensed under either of

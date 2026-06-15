@@ -1,10 +1,10 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use bytes::Bytes;
-use caramelo::{expect, matchers::eq};
-use http::{HeaderMap, Method, StatusCode};
+use caramelo::expect;
+use http::{request::Parts, HeaderMap, Method, StatusCode};
 
-use crate::{server::ServerAdapter, EasyHttpMock, HttpMockResult};
+use crate::{matchers::HttpMatcher, server::ServerAdapter, EasyHttpMock, HttpMockResult};
 
 /// State container for mock data
 pub struct MockState {
@@ -39,19 +39,19 @@ impl MockState {
 
 /// Mock struct
 pub struct Mock {
-    request: Request,
+    request: RequestMock,
 }
 
 impl Mock {
     #[inline]
     /// Create a new mock
-    pub fn of(request: Request) -> MockState {
+    pub fn of(request: RequestMock) -> MockState {
         MockState::new(Self { request })
     }
 
     #[inline]
-    /// Get the request
-    pub fn request(&self) -> &Request {
+    /// Get the request mock
+    pub fn request(&self) -> &RequestMock {
         &self.request
     }
 
@@ -59,7 +59,58 @@ impl Mock {
     /// Match this mock with an actual request
     pub fn match_with(&self, request: Request) {
         // TODO: Implement matching logic
-        expect(&self.request).to_be(eq(&request));
+        let mut expect = expect(request);
+        for (i, matcher) in self
+            .request
+            .matchers
+            .clone()
+            .into_iter()
+            .enumerate()
+        {
+            expect = if i == 0 { expect.to_be(matcher) } else { expect.and(matcher) }
+        }
+    }
+}
+
+#[inline]
+/// Add a matcher to this request
+pub fn given(matcher: HttpMatcher) -> RequestMock {
+    RequestMock { matchers: vec![matcher], respond: None }
+}
+
+/// Represents a mock request
+pub struct RequestMock {
+    matchers: Vec<HttpMatcher>,
+    respond: Option<Respond>,
+}
+
+impl RequestMock {
+    #[inline]
+    /// Add a matcher to this request
+    pub fn and(mut self, matcher: HttpMatcher) -> Self {
+        self.matchers
+            .push(matcher);
+        self
+    }
+
+    #[inline]
+    /// Check if this request matches the given request
+    pub fn matchers(&self) -> &Vec<HttpMatcher> {
+        &self.matchers
+    }
+
+    #[inline]
+    /// Get the respond for this request
+    pub fn respond(&self) -> Option<&Respond> {
+        self.respond
+            .as_ref()
+    }
+
+    #[inline]
+    /// Set the response for this request
+    pub fn will_return(mut self, respond: Respond) -> Self {
+        self.respond = Some(respond);
+        self
     }
 }
 
@@ -76,202 +127,46 @@ impl StatusCodeExt for StatusCode {
     }
 }
 
-/// Extension trait for HTTP methods to create requests.
-/// Allows creating requests using method names as strings or Method enum values.
-///
-/// # Examples
-/// ``` compile_fail
-/// use http::Method;
-/// use deboa::request::MethodExt;
-///
-/// // Using Method enum
-/// let request = Method::GET.has();
-///
-/// // Using string
-/// let request = "GET".has();
-/// ```
-pub trait MethodExt {
-    /// Create a request builder with this method
-    fn has(self) -> RequestBuilder;
-}
-
-impl MethodExt for Method {
-    #[inline]
-    /// Create a request builder with this method
-    fn has(self) -> RequestBuilder {
-        match self {
-            Method::GET => Request::builder(self),
-            Method::POST => Request::builder(self),
-            Method::PUT => Request::builder(self),
-            Method::DELETE => Request::builder(self),
-            Method::PATCH => Request::builder(self),
-            Method::HEAD => Request::builder(self),
-            Method::OPTIONS => Request::builder(self),
-            _ => panic!("Method not supported"),
-        }
-    }
-}
-
-impl MethodExt for &str {
-    #[inline]
-    /// Create a request builder with this method
-    fn has(self) -> RequestBuilder {
-        match self {
-            "GET" | "get" => Request::builder(Method::GET),
-            "POST" | "post" => Request::builder(Method::POST),
-            "PUT" | "put" => Request::builder(Method::PUT),
-            "DELETE" | "delete" => Request::builder(Method::DELETE),
-            "PATCH" | "patch" => Request::builder(Method::PATCH),
-            "HEAD" | "head" => Request::builder(Method::HEAD),
-            "OPTIONS" | "options" => Request::builder(Method::OPTIONS),
-            _ => panic!("Method not supported"),
-        }
-    }
-}
-
-/// Builder for creating mock requests
-pub struct RequestBuilder {
-    path: String,
-    method: Method,
-    headers: Option<HeaderMap>,
-    query_params: Option<HashMap<String, String>>,
-    body: Option<Bytes>,
-}
-
-impl RequestBuilder {
-    #[inline]
-    /// Set the path for this request
-    pub fn path(mut self, path: &str) -> Self {
-        self.path = path.to_string();
-        self
-    }
-
-    #[inline]
-    /// Set the method for this request
-    pub fn method(mut self, method: Method) -> Self {
-        self.method = method;
-        self
-    }
-
-    #[inline]
-    /// Set the headers for this request
-    pub fn headers(mut self, headers: HeaderMap) -> Self {
-        self.headers = Some(headers);
-        self
-    }
-
-    #[inline]
-    /// Set the query parameters for this request
-    pub fn query_params(mut self, query_params: HashMap<String, String>) -> Self {
-        self.query_params = Some(query_params);
-        self
-    }
-
-    #[inline]
-    /// Set the body for this request
-    pub fn body(mut self, body: &[u8]) -> Self {
-        self.body = Some(Bytes::from(body.to_vec()));
-        self
-    }
-
-    #[inline]
-    /// Build the request
-    pub fn build(self) -> Request {
-        Request {
-            path: self.path,
-            method: self.method,
-            headers: self.headers,
-            query_params: self.query_params,
-            body: self.body,
-            respond: None,
-        }
-    }
-
-    #[inline]
-    /// Set the response for this request
-    pub fn will_return(self, respond: Respond) -> Request {
-        Request {
-            path: self.path,
-            method: self.method,
-            headers: self.headers,
-            query_params: self.query_params,
-            body: self.body,
-            respond: Some(respond),
-        }
-    }
-}
-
 /// Represents a mock HTTP request
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Request {
     path: String,
     method: Method,
-    headers: Option<HeaderMap>,
-    query_params: Option<HashMap<String, String>>,
+    headers: HeaderMap,
+    query_params: HashMap<String, String>,
     body: Option<Bytes>,
-    respond: Option<Respond>,
-}
-
-impl Debug for Request {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Request")
-            .field("path", &self.path)
-            .field("method", &self.method)
-            .field("headers", &self.headers)
-            .field("query_params", &self.query_params)
-            .field("body", &self.body)
-            .finish()
-    }
-}
-
-impl PartialEq for Request {
-    fn eq(&self, other: &Self) -> bool {
-        let result = self.path == other.path && self.method == other.method;
-
-        if let Some(headers) = &self.headers {
-            if let Some(other_headers) = &other.headers {
-                if headers != other_headers {
-                    return false;
-                }
-            }
-        }
-
-        if let Some(query_params) = &self.query_params {
-            if let Some(other_query_params) = &other.query_params {
-                if query_params != other_query_params {
-                    return false;
-                }
-            }
-        }
-
-        if let Some(body) = &self.body {
-            if let Some(other_body) = &other.body {
-                if body != other_body {
-                    return false;
-                }
-            }
-        }
-
-        result
-    }
 }
 
 impl Request {
     #[inline]
     /// Create a new request builder
-    pub fn builder(method: Method) -> RequestBuilder {
-        RequestBuilder {
-            path: String::new(),
-            method,
-            headers: None,
-            query_params: None,
+    pub fn from_parts(parts: Parts) -> Request {
+        Request {
+            path: parts
+                .uri
+                .path()
+                .to_string(),
+            method: parts.method,
+            headers: parts.headers,
+            query_params: parts
+                .uri
+                .query()
+                .map(|q| {
+                    q.split('&')
+                        .filter_map(|pair| {
+                            pair.split_once('=')
+                                .map(|(k, v)| (k.to_string(), v.to_string()))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
             body: None,
         }
     }
 
     #[inline]
     /// Get the path
-    pub fn path(&self) -> &str {
+    pub fn path(&self) -> &String {
         &self.path
     }
 
@@ -283,13 +178,13 @@ impl Request {
 
     #[inline]
     /// Get the headers
-    pub fn headers(&self) -> &Option<HeaderMap> {
+    pub fn headers(&self) -> &HeaderMap {
         &self.headers
     }
 
     #[inline]
     /// Get the query params
-    pub fn query_params(&self) -> &Option<HashMap<String, String>> {
+    pub fn query_params(&self) -> &HashMap<String, String> {
         &self.query_params
     }
 
@@ -298,14 +193,7 @@ impl Request {
     pub fn body(&self) -> &Option<Bytes> {
         &self.body
     }
-
-    #[inline]
-    /// Get the respond
-    pub fn respond(&self) -> &Option<Respond> {
-        &self.respond
-    }
 }
-
 /// Builder for what represents a response for a request
 pub struct RespondBuilder {
     status_code: StatusCode,
@@ -362,7 +250,7 @@ impl RespondBuilder {
 }
 
 /// Represents how to respond for a request
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Respond {
     status_code: StatusCode,
     headers: HashMap<String, String>,

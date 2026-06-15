@@ -10,6 +10,8 @@ use crate::{
 pub mod config;
 /// Error module
 pub mod errors;
+/// Matchers module
+pub mod matchers;
 /// Mock module
 pub mod mock;
 /// Server module

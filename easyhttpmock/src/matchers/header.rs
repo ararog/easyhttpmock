@@ -1,0 +1,164 @@
+use caramelo::Matcher;
+use http::HeaderName;
+
+use crate::mock::Request;
+
+/// Trait for converting values into HeaderName.
+pub trait AsHeaderName {
+    /// Converts the value into a HeaderName.
+    ///
+    /// # Returns
+    ///
+    /// * `HeaderName` - The converted HeaderName.
+    fn into_header_name(self) -> HeaderName;
+}
+
+impl AsHeaderName for HeaderName {
+    fn into_header_name(self) -> HeaderName {
+        self
+    }
+}
+
+impl AsHeaderName for String {
+    fn into_header_name(self) -> HeaderName {
+        let upper = self.to_uppercase();
+        match upper.parse() {
+            Ok(header_name) => header_name,
+            Err(_) => panic!("Invalid header name"),
+        }
+    }
+}
+
+impl AsHeaderName for &str {
+    fn into_header_name(self) -> HeaderName {
+        self.to_string()
+            .into_header_name()
+    }
+}
+
+/// Creates a matcher that checks if the request has the given header.
+///
+/// # Arguments
+///
+/// * `value` - The header name to match against.
+///
+/// # Returns
+///
+/// * `Header` - A matcher that checks if the request has the given header.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::header;
+///
+/// let matcher = header("Content-Type");
+/// ```
+pub fn header<H>(value: H) -> Header
+where
+    H: AsHeaderName,
+{
+    Header(value.into_header_name())
+}
+
+#[derive(Clone)]
+/// A matcher that checks if the request has the given header.
+///
+/// # Arguments
+///
+/// * `name` - The header name to match against.
+///
+/// # Returns
+///
+/// * `Header` - A matcher that checks if the request has the given header.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::header;
+///
+/// let matcher = header("Content-Type");
+/// ```
+pub struct Header(http::header::HeaderName);
+
+impl Matcher<Request> for Header {
+    fn matches(&self, value: &Request) -> bool {
+        value
+            .headers()
+            .contains_key(&self.0)
+    }
+
+    fn description(&self) -> String {
+        format!("header matching {}", self.0)
+    }
+}
+
+/// Creates a matcher that checks if the request path matches the given regex pattern.
+///
+/// # Arguments
+///
+/// * `name` - The header name to match against.
+/// * `value` - The regex pattern to match against.
+///
+/// # Returns
+///
+/// * `HeaderValue` - A matcher that checks if the request path matches the given regex pattern.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::header_value;
+///
+/// let matcher = header_value("Content-Type", r"^application/json$");
+/// ```
+pub fn header_value<N>(name: N, value: &str) -> HeaderValue
+where
+    N: AsHeaderName,
+{
+    let regex = regex::Regex::new(value);
+    match regex {
+        Ok(regex) => HeaderValue { name: name.into_header_name(), regex },
+        Err(_) => panic!("Invalid regex pattern"),
+    }
+}
+
+#[derive(Clone)]
+/// A matcher that checks if the request path matches a regex pattern.
+///
+/// # Arguments
+///
+/// * `name` - The header name to match against.
+/// * `regex` - The regex pattern to match against.
+///
+/// # Returns
+///
+/// * `HeaderValue` - A matcher that checks if the request path matches the given regex pattern.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::header_value;
+///
+/// let matcher = header_value("Content-Type", r"^application/json$");
+/// ```
+pub struct HeaderValue {
+    name: HeaderName,
+    regex: regex::Regex,
+}
+
+impl Matcher<Request> for HeaderValue {
+    fn matches(&self, value: &Request) -> bool {
+        value
+            .headers()
+            .get(&self.name)
+            .is_some_and(|v| {
+                self.regex.is_match(
+                    v.to_str()
+                        .unwrap_or(""),
+                )
+            })
+    }
+
+    fn description(&self) -> String {
+        format!("header {} with value matching {:?}", self.name, self.regex)
+    }
+}

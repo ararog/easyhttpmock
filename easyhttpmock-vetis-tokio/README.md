@@ -21,7 +21,8 @@ use std::error::Error;
 
 use easyhttpmock::{
     config::EasyHttpMockConfig,
-    mock::{MethodExt, Mock, StatusCodeExt},
+    matchers::path,
+    mock::{given, Mock, StatusCodeExt},
     server::PortGenerator,
     EasyHttpMock,
 };
@@ -30,24 +31,11 @@ use http::{Method, StatusCode};
 use easyhttpmock_vetis_tokio::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
 use vetis_tokio::Protocol;
 
-const CA_CERT: &[u8] = include_bytes!("../../certs/ca.der");
-
-const SERVER_CERT: &[u8] = include_bytes!("../../certs/server.der");
-const SERVER_KEY: &[u8] = include_bytes!("../../certs/server.key.der");
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let server_cert = SERVER_CERT;
-    let server_key = SERVER_KEY;
-
     let vetis_adapter_config = VetisAdapterConfig::builder()
-        .hostname(Some("localhost".to_string()))
-        .interface("0.0.0.0")
         .protocol(Protocol::Http2)
         .with_random_port()
-        .cert(Some(server_cert.to_vec()))
-        .key(Some(server_key.to_vec()))
-        .ca(Some(CA_CERT.to_vec()))
         .build();
 
     let config = EasyHttpMockConfig::<VetisAdapter>::builder()
@@ -62,18 +50,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let mock = Mock::of(
-        Method::GET
-            .has()
-            .path("/test")
-            .will_return(
-                StatusCode::OK
-                    .respond()
-                    .with_body(b"teste"),
-            ),
-    );
-
-    server.register_mock(&mock);
+    Mock::of(
+        given(path("/test")).will_return(
+            StatusCode::OK
+                .respond()
+                .with_body(b"teste"),
+        ),
+    )
+    .use_on(&mut server)
+    .await?;
 
     Ok(())
 }

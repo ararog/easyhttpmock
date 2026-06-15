@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use http_body_util::BodyExt;
 use vetis_smol::{
     handler_fn,
     http::Response,
@@ -16,7 +17,7 @@ use easyhttpmock::{
 
 /// Builder for VetisAdapterConfig
 pub struct VetisAdapterConfigBuilder {
-    hostname: Option<String>,
+    hostname: String,
     interface: String,
     protocol: Protocol,
     port: u16,
@@ -33,8 +34,8 @@ impl VetisAdapterConfigBuilder {
     ///
     /// # Returns
     /// A new `VetisAdapterConfigBuilder` instance with the hostname set.
-    pub fn hostname(mut self, hostname: Option<String>) -> Self {
-        self.hostname = hostname;
+    pub fn hostname(mut self, hostname: &str) -> Self {
+        self.hostname = hostname.to_string();
         self
     }
 
@@ -81,8 +82,8 @@ impl VetisAdapterConfigBuilder {
     ///
     /// # Returns
     /// A new `VetisAdapterConfigBuilder` instance with the certificate set.    
-    pub fn cert(mut self, cert: Option<Vec<u8>>) -> Self {
-        self.cert = cert;
+    pub fn cert(mut self, cert: Vec<u8>) -> Self {
+        self.cert = Some(cert);
         self
     }
 
@@ -93,8 +94,8 @@ impl VetisAdapterConfigBuilder {
     ///
     /// # Returns
     /// A new `VetisAdapterConfigBuilder` instance with the key set.
-    pub fn key(mut self, key: Option<Vec<u8>>) -> Self {
-        self.key = key;
+    pub fn key(mut self, key: Vec<u8>) -> Self {
+        self.key = Some(key);
         self
     }
 
@@ -105,8 +106,8 @@ impl VetisAdapterConfigBuilder {
     ///
     /// # Returns
     /// A new `VetisAdapterConfigBuilder` instance with the CA certificate set.
-    pub fn ca(mut self, ca: Option<Vec<u8>>) -> Self {
-        self.ca = ca;
+    pub fn ca(mut self, ca: Vec<u8>) -> Self {
+        self.ca = Some(ca);
         self
     }
 
@@ -130,7 +131,7 @@ impl VetisAdapterConfigBuilder {
 /// Configuration for the Vetis adapter.
 #[derive(Clone)]
 pub struct VetisAdapterConfig {
-    hostname: Option<String>,
+    hostname: String,
     interface: String,
     protocol: Protocol,
     port: u16,
@@ -143,6 +144,7 @@ impl Default for VetisAdapterConfig {
     /// Creates a default configuration for the Vetis adapter.
     ///
     /// This function sets up a basic server configuration with:
+    /// - Hostname: "localhost"
     /// - Interface: "0.0.0.0"
     /// - Port: 80
     /// - No TLS certificates (HTTP only)
@@ -151,7 +153,7 @@ impl Default for VetisAdapterConfig {
     /// A default `VetisAdapterConfig` instance.  
     fn default() -> Self {
         Self {
-            hostname: None,
+            hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
             port: 80,
@@ -166,6 +168,7 @@ impl VetisAdapterConfig {
     /// Creates a new builder for the Vetis adapter configuration.
     ///
     /// This function sets up a basic server configuration with:
+    /// - Hostname: "localhost"
     /// - Interface: "0.0.0.0"
     /// - Port: 80
     /// - No TLS certificates (HTTP only)
@@ -174,7 +177,7 @@ impl VetisAdapterConfig {
     /// A new `VetisAdapterConfigBuilder` instance.  
     pub fn builder() -> VetisAdapterConfigBuilder {
         VetisAdapterConfigBuilder {
-            hostname: None,
+            hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
             port: 80,
@@ -188,7 +191,7 @@ impl VetisAdapterConfig {
     ///
     /// # Returns
     /// The hostname of the server.
-    pub fn hostname(&self) -> &Option<String> {
+    pub fn hostname(&self) -> &String {
         &self.hostname
     }
 
@@ -291,7 +294,6 @@ impl ServerAdapter for VetisAdapter {
         self.config
             .hostname()
             .clone()
-            .unwrap_or_else(|| "localhost".to_string())
     }
 
     /// Returns the base URL of the server.
@@ -358,15 +360,18 @@ impl ServerAdapter for VetisAdapter {
                 // to move it into the async block
                 let mock = mock_clone.clone();
                 async move {
-                    let (parts, _body) = request.into_parts();
+                    let (parts, body) = request.into_parts();
 
-                    mock.match_with(
-                        Request::builder(parts.method)
-                            .path(parts.uri.path())
-                            .headers(parts.headers)
-                            .body(Vec::new().as_slice())
-                            .build(),
-                    );
+                    let mut data = Vec::<u8>::new();
+                    let Ok(body_data) = body.collect().await else {
+                        return Err(vetis_smol::errors::VetisError::Handler(
+                            "Failed to collect body".to_string(),
+                        ));
+                    };
+
+                    data.extend_from_slice(&body_data.to_bytes());
+
+                    mock.match_with(Request::from_parts(parts));
 
                     let respond = mock
                         .request()
