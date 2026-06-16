@@ -53,8 +53,11 @@ pub struct Path(regex::Regex);
 
 impl Matcher<Request> for Path {
     fn matches(&self, value: &Request) -> bool {
-        self.0
-            .is_match(value.path())
+        self.0.is_match(
+            &value
+                .path()
+                .to_string(),
+        )
     }
 
     fn description(&self) -> String {

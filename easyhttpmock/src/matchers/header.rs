@@ -162,3 +162,126 @@ impl Matcher<Request> for HeaderValue {
         format!("header {} with value matching {:?}", self.name, self.regex)
     }
 }
+
+/// Creates a matcher that checks if the request has a JWT token in the Authorization header.
+///
+/// # Arguments
+///
+/// * `token` - The JWT token to match against.
+///
+/// # Returns
+///
+/// * `Jwt` - A matcher that checks if the request has a JWT token in the Authorization header.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::jwt;
+///
+/// let matcher = jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
+/// ```
+pub fn jwt(token: &str) -> Jwt {
+    Jwt { token: token.to_string() }
+}
+
+/// A matcher that checks if the request has a JWT token in the Authorization header.
+///
+/// # Arguments
+///
+/// * `token` - The JWT token to match against.
+///
+/// # Returns
+///
+/// * `Jwt` - A matcher that checks if the request has a JWT token in the Authorization header.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::jwt;
+///
+/// let matcher = jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
+/// ```
+#[derive(Clone)]
+pub struct Jwt {
+    token: String,
+}
+
+impl Matcher<Request> for Jwt {
+    fn matches(&self, value: &Request) -> bool {
+        value
+            .headers()
+            .get("Authorization")
+            .is_some_and(|v| {
+                v.to_str()
+                    .unwrap_or("")
+                    .starts_with("Bearer ")
+            })
+    }
+
+    fn description(&self) -> String {
+        format!("JWT token matching {}", self.token)
+    }
+}
+
+/// Creates a matcher that checks if the request has a basic auth token in the Authorization header.
+///
+/// # Arguments
+///
+/// * `username` - The username to match against.
+/// * `password` - The password to match against.
+///
+/// # Returns
+///
+/// * `BasicAuth` - A matcher that checks if the request has a basic auth token in the Authorization header.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::basic_auth;
+///
+/// let matcher = basic_auth("user", "pass");
+/// ```
+pub fn basic_auth(username: &str, password: &str) -> BasicAuth {
+    BasicAuth { username: username.to_string(), password: password.to_string() }
+}
+
+/// A matcher that checks if the request has a basic auth token in the Authorization header.
+///
+/// # Arguments
+///
+/// * `username` - The username to match against.
+/// * `password` - The password to match against.
+///
+/// # Returns
+///
+/// * `BasicAuth` - A matcher that checks if the request has a basic auth token in the Authorization header.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::basic_auth;
+///
+/// let matcher = basic_auth("user", "pass");
+/// ```
+#[derive(Clone)]
+pub struct BasicAuth {
+    username: String,
+    password: String,
+}
+
+impl Matcher<Request> for BasicAuth {
+    fn matches(&self, value: &Request) -> bool {
+        value
+            .headers()
+            .get("Authorization")
+            .is_some_and(|v| {
+                v.to_str()
+                    .unwrap_or("")
+                    .starts_with("Basic ")
+            })
+    }
+
+    fn description(&self) -> String {
+        format!("Basic auth with username {} and password {}", self.username, self.password)
+    }
+}

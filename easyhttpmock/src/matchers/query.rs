@@ -10,7 +10,7 @@ use crate::mock::Request;
 ///
 /// # Returns
 ///
-/// * `Query` - A matcher that checks if the request query matches the given regex pattern.
+/// * `QueryParam` - A matcher that checks if the request query matches the given regex pattern.
 ///
 /// # Panics
 ///
@@ -19,14 +19,14 @@ use crate::mock::Request;
 /// # Examples
 ///
 /// ```rust
-/// use easyhttpmock::matchers::query;
+/// use easyhttpmock::matchers::query_param;
 ///
-/// let matcher = query(r"^/api/v1/.*$");
+/// let matcher = query_param(r"^/api/v1/.*$");
 /// ```
-pub fn query(value: &str) -> Query {
+pub fn query_param(value: &str) -> QueryParam {
     let regex = regex::Regex::new(value);
     match regex {
-        Ok(regex) => Query(regex),
+        Ok(regex) => QueryParam(regex),
         Err(_) => panic!("Invalid regex pattern"),
     }
 }
@@ -40,24 +40,97 @@ pub fn query(value: &str) -> Query {
 ///
 /// # Returns
 ///
-/// * `Query` - A matcher that checks if the request query matches the given regex pattern.
+/// * `QueryParam` - A matcher that checks if the request query matches the given regex pattern.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use easyhttpmock::matchers::query;
+/// use easyhttpmock::matchers::query_param;
 ///
-/// let matcher = query(r"^/api/v1/.*$");
+/// let matcher = query_param(r"^.*name.*$");
 /// ```
-pub struct Query(regex::Regex);
+pub struct QueryParam(regex::Regex);
 
-impl Matcher<Request> for Query {
+impl Matcher<Request> for QueryParam {
     fn matches(&self, value: &Request) -> bool {
-        self.0
-            .is_match(value.path())
+        if let Some(query_params) = &value.query_params() {
+            query_params
+                .iter()
+                .any(|(key, _)| self.0.is_match(key))
+        } else {
+            false
+        }
     }
 
     fn description(&self) -> String {
-        format!("query matching {:?}", self.0)
+        format!("query param matching {:?}", self.0)
+    }
+}
+
+/// Creates a matcher that checks if the request query matches the given regex pattern.
+///
+/// # Arguments
+///
+/// * `value` - The regex pattern to match against.
+///
+/// # Returns
+///
+/// * `QueryValue` - A matcher that checks if the request query matches the given regex pattern.
+///
+/// # Panics
+///
+/// * `Invalid regex pattern` - If the regex pattern is invalid.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::query_value;
+///
+/// let matcher = query_value(r"^/api/v1/.*$");
+/// ```
+pub fn query_value(value: &str) -> QueryValue {
+    let regex = regex::Regex::new(value);
+    match regex {
+        Ok(regex) => QueryValue(regex),
+        Err(_) => panic!("Invalid regex pattern"),
+    }
+}
+
+#[derive(Clone)]
+/// A matcher that checks if the request query matches a regex pattern.
+///
+/// # Arguments
+///
+/// * `regex` - The regex pattern to match against.
+///
+/// # Returns
+///
+/// * `QueryValue` - A matcher that checks if the request query matches the given regex pattern.
+///
+/// # Examples
+///
+/// ```rust
+/// use easyhttpmock::matchers::query_value;
+///
+/// let matcher = query_value(r"^.*name.*$");
+/// ```
+pub struct QueryValue(regex::Regex);
+
+impl Matcher<Request> for QueryValue {
+    fn matches(&self, value: &Request) -> bool {
+        if let Some(query_params) = &value.query_params() {
+            query_params
+                .iter()
+                .any(|(_, value)| {
+                    self.0
+                        .is_match(value)
+                })
+        } else {
+            false
+        }
+    }
+
+    fn description(&self) -> String {
+        format!("query value matching {:?}", self.0)
     }
 }

@@ -21,8 +21,14 @@ pub enum HttpMatcher {
     Header(Header),
     /// Matches a specific header value
     HeaderValue(HeaderValue),
-    /// Matches the query string
-    Query(Query),
+    /// Matches the JWT token
+    Jwt(Jwt),
+    /// Matches the Basic auth token
+    BasicAuth(BasicAuth),
+    /// Matches a specific query parameter
+    QueryParam(QueryParam),
+    /// Matches a specific query value
+    QueryValue(QueryValue),
     /// Matches the request body
     Body(Body),
     #[cfg(feature = "json")]
@@ -46,7 +52,10 @@ impl caramelo::Matcher<crate::mock::Request> for HttpMatcher {
             HttpMatcher::Method(method) => method.matches(value),
             HttpMatcher::Header(header) => header.matches(value),
             HttpMatcher::HeaderValue(header_value) => header_value.matches(value),
-            HttpMatcher::Query(query) => query.matches(value),
+            HttpMatcher::Jwt(jwt) => jwt.matches(value),
+            HttpMatcher::BasicAuth(basic_auth) => basic_auth.matches(value),
+            HttpMatcher::QueryParam(query) => query.matches(value),
+            HttpMatcher::QueryValue(query) => query.matches(value),
             HttpMatcher::Body(body) => body.matches(value),
             #[cfg(feature = "json")]
             HttpMatcher::ExactJson(json) => json.matches(value),
@@ -65,7 +74,10 @@ impl caramelo::Matcher<crate::mock::Request> for HttpMatcher {
             HttpMatcher::Method(method) => method.description(),
             HttpMatcher::Header(header) => header.description(),
             HttpMatcher::HeaderValue(header_value) => header_value.description(),
-            HttpMatcher::Query(query) => query.description(),
+            HttpMatcher::Jwt(jwt) => jwt.description(),
+            HttpMatcher::BasicAuth(basic_auth) => basic_auth.description(),
+            HttpMatcher::QueryParam(query) => query.description(),
+            HttpMatcher::QueryValue(query) => query.description(),
             HttpMatcher::Body(body) => body.description(),
             #[cfg(feature = "json")]
             HttpMatcher::ExactJson(json) => json.description(),

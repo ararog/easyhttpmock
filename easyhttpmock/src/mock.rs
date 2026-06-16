@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use bytes::Bytes;
 use caramelo::expect;
-use http::{request::Parts, HeaderMap, Method, StatusCode};
+use http::{request::Parts, HeaderMap, Method, StatusCode, Uri};
 
 use crate::{matchers::HttpMatcher, server::ServerAdapter, EasyHttpMock, HttpMockResult};
 
@@ -127,13 +127,86 @@ impl StatusCodeExt for StatusCode {
     }
 }
 
+/// A builder for creating http requests
+#[derive(Debug)]
+pub struct RequestBuilder {
+    uri: Uri,
+    query_params: Option<HashMap<String, String>>,
+    method: http::Method,
+    version: http::Version,
+    headers: http::HeaderMap,
+    body: Option<Bytes>,
+}
+
+impl RequestBuilder {
+    /// Sets the request path
+    pub fn uri(self, uri: Uri) -> Self {
+        Self { uri, ..self }
+    }
+
+    /// Sets the request query parameters
+    pub fn query_params(self, query_params: HashMap<String, String>) -> Self {
+        Self { query_params: Some(query_params), ..self }
+    }
+
+    /// Sets the request method
+    pub fn method(self, method: http::Method) -> Self {
+        Self { method, ..self }
+    }
+
+    /// Sets the request version
+    pub fn version(self, version: http::Version) -> Self {
+        Self { version, ..self }
+    }
+
+    /// Sets the request headers
+    pub fn header<K>(self, name: K, value: &str) -> Self
+    where
+        K: http::header::IntoHeaderName,
+    {
+        let mut headers = self.headers;
+        headers.insert(
+            name,
+            value
+                .parse()
+                .unwrap(),
+        );
+        Self { headers, ..self }
+    }
+
+    /// Creates an empty request
+    pub fn empty(self) -> Result<Request, http::Error> {
+        Ok(Request {
+            method: self.method,
+            version: self.version,
+            query_params: self.query_params,
+            uri: self.uri,
+            headers: self.headers,
+            body: None,
+        })
+    }
+
+    /// Builds the request
+    pub fn body(self) -> Result<Request, http::Error> {
+        Ok(Request {
+            method: self.method,
+            version: self.version,
+            query_params: self.query_params,
+            uri: self.uri,
+            headers: self.headers,
+            body: self.body,
+        })
+    }
+}
+
 /// Represents a mock HTTP request
 #[derive(Clone, Debug, PartialEq)]
 pub struct Request {
-    path: String,
+    uri: Uri,
     method: Method,
+    version: http::Version,
     headers: HeaderMap,
-    query_params: HashMap<String, String>,
+    query_params: Option<HashMap<String, String>>,
     body: Option<Bytes>,
 }
 
@@ -141,33 +214,88 @@ impl Request {
     #[inline]
     /// Create a new request builder
     pub fn from_parts(parts: Parts) -> Request {
+        let query_params = parts
+            .uri
+            .query()
+            .map(|q| {
+                q.split('&')
+                    .filter_map(|pair| {
+                        pair.split_once('=')
+                            .map(|(k, v)| (k.to_string(), v.to_string()))
+                    })
+                    .collect()
+            });
+
         Request {
-            path: parts
-                .uri
-                .path()
-                .to_string(),
+            uri: parts.uri,
             method: parts.method,
+            version: parts.version,
             headers: parts.headers,
-            query_params: parts
-                .uri
-                .query()
-                .map(|q| {
-                    q.split('&')
-                        .filter_map(|pair| {
-                            pair.split_once('=')
-                                .map(|(k, v)| (k.to_string(), v.to_string()))
-                        })
-                        .collect()
-                })
-                .unwrap_or_default(),
+            query_params,
             body: None,
         }
     }
 
+    fn builder(method: http::Method, uri: Uri) -> RequestBuilder {
+        RequestBuilder {
+            method,
+            version: http::Version::HTTP_11,
+            uri,
+            headers: http::HeaderMap::new(),
+            body: None,
+            query_params: None,
+        }
+    }
+
+    /// Creates a new GET request builder
+    pub fn get(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::GET, uri)
+    }
+
+    /// Creates a new POST request builder
+    pub fn post(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::POST, uri)
+    }
+
+    /// Creates a new PUT request builder
+    pub fn put(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::PUT, uri)
+    }
+
+    /// Creates a new DELETE request builder
+    pub fn delete(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::DELETE, uri)
+    }
+
+    /// Creates a new PATCH request builder
+    pub fn patch(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::PATCH, uri)
+    }
+
+    /// Creates a new HEAD request builder
+    pub fn head(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::HEAD, uri)
+    }
+
+    /// Creates a new OPTIONS request builder
+    pub fn options(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::OPTIONS, uri)
+    }
+
+    /// Creates a new TRACE request builder
+    pub fn trace(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::TRACE, uri)
+    }
+
+    /// Creates a new CONNECT request builder
+    pub fn connect(uri: Uri) -> RequestBuilder {
+        Self::builder(http::Method::CONNECT, uri)
+    }
+
     #[inline]
     /// Get the path
-    pub fn path(&self) -> &String {
-        &self.path
+    pub fn path(&self) -> &Uri {
+        &self.uri
     }
 
     #[inline]
@@ -183,8 +311,14 @@ impl Request {
     }
 
     #[inline]
+    /// Get the version
+    pub fn version(&self) -> &http::Version {
+        &self.version
+    }
+
+    #[inline]
     /// Get the query params
-    pub fn query_params(&self) -> &HashMap<String, String> {
+    pub fn query_params(&self) -> &Option<HashMap<String, String>> {
         &self.query_params
     }
 
