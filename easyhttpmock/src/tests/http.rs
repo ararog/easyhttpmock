@@ -16,7 +16,7 @@ fn test_path_matcher() {
 }
 
 #[test]
-#[should_panic = "Expected Request { method: GET, uri: /users, version: HTTP/1.1, headers: {}, body: None } to have path matching Regex(\"^/api/.*$\")"]
+#[should_panic = "Expected Request { method: GET, uri: /users, version: HTTP/1.1, headers: {}, query_params: None, body: None } to have path matching Regex(\"^/api/.*$\")"]
 fn test_path_matcher_panic() {
     let request = Request::get(Uri::from_static("/users"))
         .empty()
@@ -35,7 +35,7 @@ fn test_method_matcher() {
 }
 
 #[test]
-#[should_panic = "Expected Request { method: POST, uri: /api/users, version: HTTP/1.1, headers: {}, body: None } to have method matching GET"]
+#[should_panic = "Expected Request { method: POST, uri: /api/users, version: HTTP/1.1, headers: {}, query_params: None, body: None } to have method matching GET"]
 fn test_method_matcher_panic() {
     let request = Request::post(Uri::from_static("/api/users"))
         .empty()
@@ -45,7 +45,7 @@ fn test_method_matcher_panic() {
 }
 
 #[test]
-#[should_panic = "Expected Request { method: POST, uri: /api/users, version: HTTP/1.1, headers: {}, body: None } to have method matching POST and path matching Regex(\"^/api/posts$\")"]
+#[should_panic = "Expected Request { method: POST, uri: /api/users, version: HTTP/1.1, headers: {}, query_params: None, body: None } to have method matching POST and path matching Regex(\"^/api/posts$\")"]
 fn test_method_and_path_matcher_panic() {
     let request = Request::post(Uri::from_static("/api/users"))
         .empty()
@@ -67,7 +67,7 @@ fn test_header_matcher() {
 }
 
 #[test]
-#[should_panic = "Expected Request { method: GET, uri: /api/users, version: HTTP/1.1, headers: {\"content-store\": \"application/json\"}, body: None } to have header matching content-type"]
+#[should_panic = "Expected Request { method: GET, uri: /api/users, version: HTTP/1.1, headers: {\"content-store\": \"application/json\"}, query_params: None, body: None } to have header matching content-type"]
 fn test_header_matcher_failure() {
     let request = Request::get(Uri::from_static("/api/users"))
         .header("content-store", "application/json")
@@ -88,7 +88,7 @@ fn test_header_value_regex() {
 }
 
 #[test]
-#[should_panic = "Expected Request { method: GET, uri: /api/users, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: None } to have header content-type with value matching Regex(\"^text/.*\")"]
+#[should_panic = "Expected Request { method: GET, uri: /api/users, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, query_params: None, body: None } to have header content-type with value matching Regex(\"^text/.*\")"]
 fn test_header_value_regex_failure() {
     let request = Request::get(Uri::from_static("/api/users"))
         .header("content-type", "application/json")

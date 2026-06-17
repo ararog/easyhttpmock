@@ -202,8 +202,8 @@ impl RequestBuilder {
 /// Represents a mock HTTP request
 #[derive(Clone, Debug, PartialEq)]
 pub struct Request {
-    uri: Uri,
     method: Method,
+    uri: Uri,
     version: http::Version,
     headers: HeaderMap,
     query_params: Option<HashMap<String, String>>,
@@ -227,8 +227,8 @@ impl Request {
             });
 
         Request {
-            uri: parts.uri,
             method: parts.method,
+            uri: parts.uri,
             version: parts.version,
             headers: parts.headers,
             query_params,
