@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use bytes::Bytes;
-use caramelo::{expect, matchers::and, Matcher, TypedMatcher};
+use caramelo::{expect, matchers::and, TypedMatcher};
 use http::{request::Parts, HeaderMap, Method, StatusCode, Uri};
 
 use crate::{matchers::HttpMatcher, server::ServerAdapter, EasyHttpMock, HttpMockResult};
