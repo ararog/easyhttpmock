@@ -1,4 +1,4 @@
-use caramelo::Matcher;
+use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
 use http::HeaderName;
 
 use crate::mock::Request;
@@ -92,6 +92,12 @@ impl Matcher<Request> for Header {
     }
 }
 
+impl TypedMatcher<Request> for Header {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
+    }
+}
+
 /// Creates a matcher that checks if the request path matches the given regex pattern.
 ///
 /// # Arguments
@@ -163,6 +169,12 @@ impl Matcher<Request> for HeaderValue {
     }
 }
 
+impl TypedMatcher<Request> for HeaderValue {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
+    }
+}
+
 /// Creates a matcher that checks if the request has a JWT token in the Authorization header.
 ///
 /// # Arguments
@@ -220,6 +232,12 @@ impl Matcher<Request> for Jwt {
 
     fn description(&self) -> String {
         format!("JWT token matching {}", self.token)
+    }
+}
+
+impl TypedMatcher<Request> for Jwt {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
     }
 }
 
@@ -283,5 +301,11 @@ impl Matcher<Request> for BasicAuth {
 
     fn description(&self) -> String {
         format!("Basic auth with username {} and password {}", self.username, self.password)
+    }
+}
+
+impl TypedMatcher<Request> for BasicAuth {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
     }
 }

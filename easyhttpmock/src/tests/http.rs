@@ -1,4 +1,4 @@
-use caramelo::expect;
+use caramelo::{expect, MatcherExt};
 use http::{header::CONTENT_TYPE, Method, Uri};
 
 use crate::{
@@ -51,9 +51,7 @@ fn test_method_and_path_matcher_panic() {
         .empty()
         .unwrap();
 
-    expect(request)
-        .to_have(method(Method::POST))
-        .and(path(r"^/api/posts$"));
+    expect(request).to_have(method(Method::POST).and(path(r"^/api/posts$")));
 }
 
 #[test]

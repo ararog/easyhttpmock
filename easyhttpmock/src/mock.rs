@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use bytes::Bytes;
-use caramelo::expect;
+use caramelo::{expect, matchers::and, Matcher, TypedMatcher};
 use http::{request::Parts, HeaderMap, Method, StatusCode, Uri};
 
 use crate::{matchers::HttpMatcher, server::ServerAdapter, EasyHttpMock, HttpMockResult};
@@ -59,16 +59,16 @@ impl Mock {
     /// Match this mock with an actual request
     pub fn match_with(&self, request: Request) {
         // TODO: Implement matching logic
-        let mut expect = expect(request);
-        for (i, matcher) in self
+        let expect = expect(request);
+        let matchers: Vec<Box<dyn TypedMatcher<Request>>> = self
             .request
             .matchers
-            .clone()
-            .into_iter()
-            .enumerate()
-        {
-            expect = if i == 0 { expect.to_be(matcher) } else { expect.and(matcher) }
-        }
+            .iter()
+            .fold(Vec::new(), |mut acc, m| {
+                acc.push(Box::new(m.clone()));
+                acc
+            });
+        expect.to_match(and(matchers));
     }
 }
 

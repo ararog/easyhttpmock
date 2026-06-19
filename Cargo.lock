@@ -421,11 +421,20 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
 name = "caramelo"
-version = "0.1.1-beta.1"
+version = "0.1.1-beta.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3951ca5db1f2323fd04c83e682de8ef093bfcad6e53811d3b5b83aafbdddf0ff"
+checksum = "ca695b9dc849871dd610e5afff319c75b07b9e3bd3d58f7c9b27b96830eb0972"
 dependencies = [
+ "http",
+ "http-body",
+ "http-body-util",
+ "jsonpath-rust",
  "regex",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "simdxml",
+ "sonic-rs",
 ]
 
 [[package]]

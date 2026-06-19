@@ -1,4 +1,4 @@
-use caramelo::Matcher;
+use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
 
 use crate::{matchers::HttpMatcher, mock::Request};
 
@@ -62,5 +62,11 @@ impl Matcher<Request> for Path {
 
     fn description(&self) -> String {
         format!("path matching {:?}", self.0)
+    }
+}
+
+impl TypedMatcher<Request> for Path {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
     }
 }

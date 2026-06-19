@@ -1,4 +1,4 @@
-use caramelo::Matcher;
+use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
 
 use crate::mock::Request;
 
@@ -67,6 +67,12 @@ impl Matcher<Request> for QueryParam {
     }
 }
 
+impl TypedMatcher<Request> for QueryParam {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
+    }
+}
+
 /// Creates a matcher that checks if the request query matches the given regex pattern.
 ///
 /// # Arguments
@@ -132,5 +138,11 @@ impl Matcher<Request> for QueryValue {
 
     fn description(&self) -> String {
         format!("query value matching {:?}", self.0)
+    }
+}
+
+impl TypedMatcher<Request> for QueryValue {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
     }
 }

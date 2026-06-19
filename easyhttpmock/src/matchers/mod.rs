@@ -5,10 +5,13 @@ mod path;
 mod query;
 
 pub use body::*;
+use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
 pub use header::*;
 pub use method::*;
 pub use path::*;
 pub use query::*;
+
+use crate::mock::Request;
 
 #[derive(Clone)]
 /// Enum representing different types of HTTP matchers
@@ -45,8 +48,8 @@ pub enum HttpMatcher {
     PartialXml(BodyWithPartialXml),
 }
 
-impl caramelo::Matcher<crate::mock::Request> for HttpMatcher {
-    fn matches(&self, value: &crate::mock::Request) -> bool {
+impl Matcher<Request> for HttpMatcher {
+    fn matches(&self, value: &Request) -> bool {
         match self {
             HttpMatcher::Path(path) => path.matches(value),
             HttpMatcher::Method(method) => method.matches(value),
@@ -88,5 +91,11 @@ impl caramelo::Matcher<crate::mock::Request> for HttpMatcher {
             #[cfg(feature = "xml")]
             HttpMatcher::PartialXml(xml) => xml.description(),
         }
+    }
+}
+
+impl TypedMatcher<Request> for HttpMatcher {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
     }
 }

@@ -1,4 +1,4 @@
-use caramelo::Matcher;
+use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
 
 use crate::mock::Request;
 
@@ -87,5 +87,11 @@ impl Matcher<Request> for Method {
 
     fn description(&self) -> String {
         format!("method matching {}", self.0)
+    }
+}
+
+impl TypedMatcher<Request> for Method {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
     }
 }

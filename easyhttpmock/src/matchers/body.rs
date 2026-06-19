@@ -1,4 +1,6 @@
+use caramelo::MatchType::ToHave;
 use caramelo::Matcher;
+use caramelo::TypedMatcher;
 
 use crate::matchers::HttpMatcher;
 use crate::mock::Request;
@@ -70,9 +72,15 @@ impl Matcher<Request> for Body {
     }
 }
 
+impl TypedMatcher<Request> for Body {
+    fn matcher_type(&self) -> caramelo::MatchType {
+        ToHave
+    }
+}
+
 #[cfg(feature = "json")]
 pub(crate) mod json {
-    use caramelo::Matcher;
+    use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
     use jsonpath_rust::JsonPath;
     use sonic_rs::Serialize;
 
@@ -133,6 +141,12 @@ pub(crate) mod json {
 
         fn description(&self) -> String {
             format!("body contents matching {}", self.0)
+        }
+    }
+
+    impl TypedMatcher<Request> for BodyWithExactJson {
+        fn matcher_type(&self) -> caramelo::MatchType {
+            ToHave
         }
     }
 
@@ -200,11 +214,17 @@ pub(crate) mod json {
             format!("body contents containing {}", self.0)
         }
     }
+
+    impl TypedMatcher<Request> for BodyWithPartialJson {
+        fn matcher_type(&self) -> caramelo::MatchType {
+            ToHave
+        }
+    }
 }
 
 #[cfg(feature = "xml")]
 pub(crate) mod xml {
-    use caramelo::Matcher;
+    use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
     use serde::Serialize;
     use serde_xml_rs::to_string;
     use simdxml::parse;
@@ -289,6 +309,12 @@ pub(crate) mod xml {
         }
     }
 
+    impl TypedMatcher<Request> for BodyWithExactXml {
+        fn matcher_type(&self) -> caramelo::MatchType {
+            ToHave
+        }
+    }
+
     /// Creates a matcher that checks if the request body contains the given XML partial.
     ///
     /// # Arguments
@@ -349,6 +375,12 @@ pub(crate) mod xml {
 
         fn description(&self) -> String {
             format!("body contents containing {}", self.0)
+        }
+    }
+
+    impl TypedMatcher<Request> for BodyWithPartialXml {
+        fn matcher_type(&self) -> caramelo::MatchType {
+            ToHave
         }
     }
 }
