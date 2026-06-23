@@ -139,9 +139,9 @@ impl<S: ServerAdapter> EasyHttpMock<S> {
     ///         ),
     /// );
     ///
-    /// server.register_mock(&mock);
+    /// server.register_mock(mock);
     /// ```
-    pub async fn register_mock(&mut self, mock: &MockState) -> HttpMockResult<()> {
+    pub async fn register_mock(&mut self, mock: MockState) -> HttpMockResult<()> {
         self.server
             .register_mock(mock.inner());
 

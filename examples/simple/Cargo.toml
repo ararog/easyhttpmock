@@ -6,11 +6,10 @@ edition = "2024"
 [dependencies]
 bytes = "1.11.1"
 deboa = { version = "0.1.0-beta.17" }
-deboa-tokio = { version = "0.1.0-beta.2", features = [
-  "http2",
-  "rust-tls",
+deboa-tokio = { version = "0.1.0-beta.4", features = [
+  "http1",
 ], default-features = false }
-easyhttpmock-vetis-tokio = { version = "0.1.0-beta.2" }
+easyhttpmock-vetis-tokio = { version = "0.1.0-beta.3" }
 env_logger = "0.11.8"
 http = "1.4.0"
 http-body-util = "0.1.3"

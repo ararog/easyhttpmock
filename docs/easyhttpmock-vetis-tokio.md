@@ -4,7 +4,7 @@ title: EasyHttpMock Vetis Tokio - HTTP mock server using Vetis server with Tokio
 nav_order: 3
 ---
 
-# EasyHttpMock Vetis Tokio
+## EasyHttpMock Vetis Tokio
 
 **EasyHttpMock Vetis Tokio** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. It provides a clean, intuitive API for creating realistic mock endpoints that simulate real-world API behavior, making your testing workflow faster and more reliable. This implementation uses the Vetis server with the Tokio runtime.
 
@@ -20,30 +20,19 @@ easyhttpmock-vetis-tokio = { version = "0.1.0", features = ["http2", "rust-tls"]
 ## Usage
 
 ```rust,no_run
-use std::error::Error;
-
-use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    mock::{MethodExt, Mock, StatusCodeExt},
-    server::PortGenerator,
+use easyhttpmock_vetis_tokio::{
     EasyHttpMock,
+    config::EasyHttpMockConfig,
+    matchers::{method, path},
+    mock::{AsyncMatcherExt, Mock, StatusCodeExt, given},
+    vetis_adapter::VetisAdapter,
 };
 use http::{Method, StatusCode};
-
-use easyhttpmock_vetis_tokio::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
-use vetis_tokio::Protocol;
+use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let vetis_adapter_config = VetisAdapterConfig::builder()
-        .protocol(Protocol::Http2)
-        .with_random_port()
-        .build();
-
-    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
-        .server_config(vetis_adapter_config)
-        .build();
-
+async fn main() -> Result<(), Box<dyn Error>> {
+    let config = EasyHttpMockConfig::<VetisAdapter>::default();
     let server = EasyHttpMock::new(config);
     let mut server = match server {
         Ok(server) => server,
@@ -53,17 +42,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let mock = Mock::of(
-        Method::GET
-            .has()
-            .path("/test")
-            .will_return(
-                StatusCode::OK
-                    .respond()
-                    .with_body(b"teste"),
-            ),
+        given(method(Method::GET).and(path("/test"))).will_return(
+            StatusCode::OK
+                .respond()
+                .with_body(b"teste"),
+        ),
     );
 
-    server.register_mock(&mock);
+    server.register_mock(mock).await?;
 
     Ok(())
 }

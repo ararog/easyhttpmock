@@ -3,8 +3,8 @@ use deboa::{request::get, HttpClient};
 use deboa_tokio::cert::{Certificate, ContentEncoding};
 use easyhttpmock::{
     config::EasyHttpMockConfig,
-    matchers::path,
-    mock::{given, Mock, StatusCodeExt},
+    matchers::{method, path},
+    mock::{given, AsyncMatcherExt, Mock, StatusCodeExt},
     server::PortGenerator,
     EasyHttpMock,
 };
@@ -42,7 +42,7 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
     };
 
     Mock::of(
-        given(path("/test")).will_return(
+        given(path("/test").and(method("GET"))).will_return(
             StatusCode::OK
                 .respond()
                 .with_body(b"teste"),

@@ -3,8 +3,8 @@ use deboa::{request::get, HttpClient};
 use deboa_smol::cert::{Certificate, ContentEncoding};
 use easyhttpmock::{
     config::EasyHttpMockConfig,
-    matchers::path,
-    mock::{given, Mock, StatusCodeExt},
+    matchers::{method, path},
+    mock::{given, AsyncMatcherExt, Mock, StatusCodeExt},
     server::PortGenerator,
     EasyHttpMock,
 };
@@ -43,15 +43,17 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    Mock::of(
-        given(path("/test")).will_return(
+    let mock = Mock::of(
+        given(path("/test").and(method("GET"))).will_return(
             StatusCode::OK
                 .respond()
                 .with_body(b"teste"),
         ),
-    )
-    .use_on(&mut server)
-    .await?;
+    );
+
+    server
+        .register_mock(mock)
+        .await?;
 
     let client = deboa_smol::Client::builder()
         .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))

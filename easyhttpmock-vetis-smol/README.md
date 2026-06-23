@@ -4,12 +4,12 @@
 
 This crate provides the core functionality for creating HTTP mock servers using the Smol runtime.
 
-# Quick Start
+## Quick Start
 
 Add EasyHttpMock Vetis Smol to your `Cargo.toml`:
 
 ```toml
-easyhttpmock-vetis-smol = { version = "0.1.0", features = ["http2", "rust-tls"] }
+easyhttpmock-vetis-smol = { version = "0.1.0-beta.3", features = ["http2", "rust-tls"] }
 macro_rules_attribute = "0.2.2"
 smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }
@@ -20,34 +20,21 @@ smol-macros = { version = "0.1.1", default-features = false }
 Here's how simple it is to create a web server with VeTiS:
 
 ```rust,no_run
-use std::error::Error;
-
-use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    matchers::path,
-    mock::{given, Mock, StatusCodeExt},
-    server::PortGenerator,
+use easyhttpmock_vetis_smol::{
     EasyHttpMock,
+    config::EasyHttpMockConfig,
+    matchers::{method, path},
+    mock::{AsyncMatcherExt, Mock, StatusCodeExt, given},
+    vetis_adapter::VetisAdapter,
 };
 use http::{Method, StatusCode};
-
-use easyhttpmock_vetis_smol::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
-use vetis_smol::Protocol;
-
 use macro_rules_attribute::apply;
 use smol_macros::main;
+use std::error::Error;
 
 #[apply(main!)]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let vetis_adapter_config = VetisAdapterConfig::builder()
-        .protocol(Protocol::Http2)
-        .with_random_port()
-        .build();
-
-    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
-        .server_config(vetis_adapter_config)
-        .build();
-
+async fn main() -> Result<(), Box<dyn Error>> {
+    let config = EasyHttpMockConfig::<VetisAdapter>::default();
     let server = EasyHttpMock::new(config);
     let mut server = match server {
         Ok(server) => server,
@@ -56,19 +43,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    Mock::of(
-        given(path("/test")).will_return(
+    let mock = Mock::of(
+        given(method(Method::GET).and(path("/test"))).will_return(
             StatusCode::OK
                 .respond()
                 .with_body(b"teste"),
         ),
-    )
-    .use_on(&mut server)
-    .await?;
+    );
 
-    // TODO: Make a request to the server and assert the response
-
-    server.stop().await?;
+    server.register_mock(mock).await?;
 
     Ok(())
 }
@@ -79,9 +62,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 Licensed under either of
 
 - Apache License, Version 2.0
-  (LICENSE-APACHE or https://www.apache.org/licenses/LICENSE-2.0)
+  (LICENSE-APACHE or <https://www.apache.org/licenses/LICENSE-2.0>)
 - MIT license
-  (LICENSE-MIT or https://opensource.org/licenses/MIT)
+  (LICENSE-MIT or <https://opensource.org/licenses/MIT>)
 
 at your option.
 

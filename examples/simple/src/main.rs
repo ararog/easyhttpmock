@@ -1,40 +1,16 @@
-use std::error::Error;
-
-use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    mock::{MethodExt, Mock, StatusCodeExt},
-    server::PortGenerator,
+use easyhttpmock_vetis_tokio::{
     EasyHttpMock,
+    config::EasyHttpMockConfig,
+    matchers::{method, path},
+    mock::{AsyncMatcherExt, Mock, StatusCodeExt, given},
+    vetis_adapter::VetisAdapter,
 };
 use http::{Method, StatusCode};
-
-use easyhttpmock_vetis_tokio::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
-use vetis_tokio::Protocol;
-
-pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
-
-pub const SERVER_CERT: &[u8] = include_bytes!("../certs/server.der");
-pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
+use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let server_cert = SERVER_CERT;
-    let server_key = SERVER_KEY;
-
-    let vetis_adapter_config = VetisAdapterConfig::builder()
-        .hostname(Some("localhost".to_string()))
-        .interface("0.0.0.0")
-        .protocol(Protocol::Http2)
-        .with_random_port()
-        .cert(Some(server_cert.to_vec()))
-        .key(Some(server_key.to_vec()))
-        .ca(Some(CA_CERT.to_vec()))
-        .build();
-
-    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
-        .server_config(vetis_adapter_config)
-        .build();
-
+async fn main() -> Result<(), Box<dyn Error>> {
+    let config = EasyHttpMockConfig::<VetisAdapter>::default();
     let server = EasyHttpMock::new(config);
     let mut server = match server {
         Ok(server) => server,
@@ -44,17 +20,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let mock = Mock::of(
-        Method::GET
-            .has()
-            .path("/test")
-            .will_return(
-                StatusCode::OK
-                    .respond()
-                    .with_body(b"teste"),
-            ),
+        given(method(Method::GET).and(path("/test"))).will_return(
+            StatusCode::OK
+                .respond()
+                .with_body(b"teste"),
+        ),
     );
 
-    server.register_mock(mock);
+    server.register_mock(mock).await?;
 
     Ok(())
 }

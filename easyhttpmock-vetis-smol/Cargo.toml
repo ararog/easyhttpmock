@@ -1,6 +1,6 @@
 [package]
 name = "easyhttpmock-vetis-smol"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.4"
 edition.workspace = true
 authors.workspace = true
 repository.workspace = true
@@ -25,20 +25,20 @@ http3 = ["vetis-smol/http3"]
 rust-tls = ["vetis-smol/rust-tls"]
 
 [dependencies]
-caramelo = "0.1.1-beta.1"
+caramelo = "0.1.1-beta.2"
 easyhttpmock = { workspace = true }
 http = "1.4.0"
 http-body-util = "0.1.3"
 macro_rules_attribute = "0.2.2"
 rand = "0.10.0"
 smol-macros = "0.1.1"
-vetis-smol = { version = "0.1.0-beta.2", features = [
+vetis-smol = { version = "0.1.0-beta.3", features = [
   "http2",
   "rust-tls",
 ], default-features = false }
 
 [dev-dependencies]
 deboa = "0.1.0-beta.17"
-deboa-smol = "0.1.0-beta.2"
+deboa-smol = "0.1.0-beta.4"
 smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
 
 use crate::mock::Request;
@@ -53,11 +55,11 @@ impl AsMethod for &str {
 ///
 /// let matcher = method("GET");
 /// ```
-pub fn method<M>(value: M) -> Method
+pub fn method<M>(value: M) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static>
 where
     M: AsMethod,
 {
-    Method(value.into_method())
+    Arc::new(Method(value.into_method()))
 }
 
 #[derive(Clone)]
@@ -79,6 +81,9 @@ where
 /// let matcher = method("GET");
 /// ```
 pub struct Method(http::Method);
+
+unsafe impl Send for Method {}
+unsafe impl Sync for Method {}
 
 impl Matcher<Request> for Method {
     fn matches(&self, value: &Request) -> bool {

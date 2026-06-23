@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use caramelo::expect;
 use http_body_util::BodyExt;
 use vetis_tokio::{
     handler_fn,
@@ -81,7 +82,7 @@ impl VetisAdapterConfigBuilder {
     /// * `cert` - The certificate to set.
     ///
     /// # Returns
-    /// A new `VetisAdapterConfigBuilder` instance with the certificate set.    
+    /// A new `VetisAdapterConfigBuilder` instance with the certificate set.
     pub fn cert(mut self, cert: Vec<u8>) -> Self {
         self.cert = Some(cert);
         self
@@ -145,17 +146,17 @@ impl Default for VetisAdapterConfig {
     ///
     /// This function sets up a basic server configuration with:
     /// - Interface: "0.0.0.0"
-    /// - Port: 80
+    /// - Port: random port between 9000 and 65535
     /// - No TLS certificates (HTTP only)
     ///
     /// # Returns
-    /// A default `VetisAdapterConfig` instance.  
+    /// A default `VetisAdapterConfig` instance.
     fn default() -> Self {
         Self {
             hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
-            port: 80,
+            port: rand::random_range(9000..65535),
             cert: None,
             key: None,
             ca: None,
@@ -168,17 +169,17 @@ impl VetisAdapterConfig {
     ///
     /// This function sets up a basic server configuration with:
     /// - Interface: "0.0.0.0"
-    /// - Port: 80
+    /// - Port: random port between 9000 and 65535
     /// - No TLS certificates (HTTP only)
     ///
     /// # Returns
-    /// A new `VetisAdapterConfigBuilder` instance.  
+    /// A new `VetisAdapterConfigBuilder` instance.
     pub fn builder() -> VetisAdapterConfigBuilder {
         VetisAdapterConfigBuilder {
             hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
-            port: 80,
+            port: rand::random_range(9000..65535),
             cert: None,
             key: None,
             ca: None,
@@ -220,7 +221,7 @@ impl VetisAdapterConfig {
     /// Returns the key of the server.
     ///
     /// # Returns
-    /// The key of the server.    
+    /// The key of the server.
     pub fn key(&self) -> &Option<Vec<u8>> {
         &self.key
     }
@@ -249,6 +250,7 @@ impl From<VetisAdapterConfig> for ServerConfig {
     }
 }
 
+#[derive(Default)]
 /// Vetis adapter implementation
 pub struct VetisAdapter {
     server: Vetis,
@@ -273,7 +275,7 @@ impl ServerAdapter for VetisAdapter {
     /// * `config` - The configuration for the adapter.
     ///
     /// # Returns
-    /// A new `VetisAdapter` instance.    
+    /// A new `VetisAdapter` instance.
     fn new(config: Self::Config) -> Result<Self, EasyHttpMockError> {
         let vetis_config = config
             .clone()
@@ -297,7 +299,7 @@ impl ServerAdapter for VetisAdapter {
     /// Returns the base URL of the server.
     ///
     /// # Returns
-    /// The base URL of the server.    
+    /// The base URL of the server.
     fn base_url(&self) -> String {
         let hostname = self.hostname();
 
@@ -315,7 +317,7 @@ impl ServerAdapter for VetisAdapter {
     /// Returns the configuration of the server.
     ///
     /// # Returns
-    /// The configuration of the server.    
+    /// The configuration of the server.
     fn config(&self) -> &Self::Config {
         &self.config
     }
@@ -369,7 +371,11 @@ impl ServerAdapter for VetisAdapter {
 
                     data.extend_from_slice(&body_data.to_bytes());
 
-                    mock.match_with(Request::from_parts(parts));
+                    expect(Request::from_parts(parts)).to_match(
+                        mock.request()
+                            .matcher()
+                            .clone(),
+                    );
 
                     let respond = mock
                         .request()

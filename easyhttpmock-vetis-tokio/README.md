@@ -4,12 +4,12 @@
 
 This crate provides the core functionality for creating HTTP mock servers using the Tokio runtime.
 
-# Quick Start
+## Quick Start
 
 Add EasyHttpMock Vetis Tokio to your `Cargo.toml`:
 
 ```toml
-easyhttpmock-vetis-tokio = { version = "0.1.0", features = ["http2", "rust-tls"] }
+easyhttpmock-vetis-tokio = { version = "0.1.0-beta.3", features = ["http1", "rust-tls"] }
 ```
 
 ## Usage Example
@@ -17,31 +17,19 @@ easyhttpmock-vetis-tokio = { version = "0.1.0", features = ["http2", "rust-tls"]
 Here's how simple it is to create a web server with VeTiS:
 
 ```rust,no_run
-use std::error::Error;
-
-use easyhttpmock::{
-    config::EasyHttpMockConfig,
-    matchers::path,
-    mock::{given, Mock, StatusCodeExt},
-    server::PortGenerator,
+use easyhttpmock_vetis_tokio::{
     EasyHttpMock,
+    config::EasyHttpMockConfig,
+    matchers::{method, path},
+    mock::{AsyncMatcherExt, Mock, StatusCodeExt, given},
+    vetis_adapter::VetisAdapter,
 };
 use http::{Method, StatusCode};
-
-use easyhttpmock_vetis_tokio::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
-use vetis_tokio::Protocol;
+use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let vetis_adapter_config = VetisAdapterConfig::builder()
-        .protocol(Protocol::Http2)
-        .with_random_port()
-        .build();
-
-    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
-        .server_config(vetis_adapter_config)
-        .build();
-
+async fn main() -> Result<(), Box<dyn Error>> {
+    let config = EasyHttpMockConfig::<VetisAdapter>::default();
     let server = EasyHttpMock::new(config);
     let mut server = match server {
         Ok(server) => server,
@@ -50,15 +38,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    Mock::of(
-        given(path("/test")).will_return(
+    let mock = Mock::of(
+        given(method(Method::GET).and(path("/test"))).will_return(
             StatusCode::OK
                 .respond()
                 .with_body(b"teste"),
         ),
-    )
-    .use_on(&mut server)
-    .await?;
+    );
+
+    server.register_mock(mock).await?;
 
     Ok(())
 }
@@ -69,9 +57,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 Licensed under either of
 
 - Apache License, Version 2.0
-  (LICENSE-APACHE or https://www.apache.org/licenses/LICENSE-2.0)
+  (LICENSE-APACHE or <https://www.apache.org/licenses/LICENSE-2.0>)
 - MIT license
-  (LICENSE-MIT or https://opensource.org/licenses/MIT)
+  (LICENSE-MIT or <https://opensource.org/licenses/MIT>)
 
 at your option.
 

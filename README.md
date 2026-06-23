@@ -2,9 +2,6 @@
 
 [![Crates.io downloads](https://img.shields.io/crates/d/easyhttpmock)](https://crates.io/crates/easyhttpmock) [![crates.io](https://img.shields.io/crates/v/easyhttpmock?style=flat-square)](https://crates.io/crates/easyhttpmock) [![Build Status](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml/badge.svg?event=push)](https://github.com/ararog/easyhttpmock/actions/workflows/rust.yml) ![Crates.io MSRV](https://img.shields.io/crates/msrv/easyhttpmock) [![Documentation](https://docs.rs/easyhttpmock/badge.svg)](https://docs.rs/easyhttpmock/latest/easyhttpmock) [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/ararog/easyhttpmock/blob/main/LICENSE.md)  [![codecov](https://codecov.io/gh/ararog/easyhttpmock/graph/badge.svg?token=T0HSBAPVSI)](https://codecov.io/gh/ararog/easyhttpmock)
 
-
-**The effortless HTTP mock server for seamless API testing**
-
 **EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. Built to work with any web server, it provides a clean, intuitive API for creating realistic mock endpoints that simulate real-world API behavior, making your testing workflow faster and more reliable.
 
 ## Why EasyHttpMock?
@@ -21,7 +18,7 @@
 Add EasyHttpMock to your `Cargo.toml`:
 
 ```toml
-easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http2", "tokio-rust-tls"] }
+easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http1"] }
 ```
 
 ## Usage Example
@@ -29,77 +26,36 @@ easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http2", "tokio-rust
 Here's how simple it is to create a mock HTTP server for testing:
 
 ```rust
-use http::StatusCode;
-
-use easyhttpmock::{
+use easyhttpmock_vetis_tokio::{
     EasyHttpMock,
     config::EasyHttpMockConfig,
-    server::{
-        PortGenerator,
-        adapters::vetis_adapter::{VetisAdapter, VetisAdapterConfig},
-    },
+    matchers::{method, path},
+    mock::{AsyncMatcherExt, Mock, StatusCodeExt, given},
+    vetis_adapter::VetisAdapter,
 };
-
-use deboa::{
-    Client,
-    cert::{Certificate, ContentEncoding},
-    request::DeboaRequest,
-};
-
-use vetis::Response;
-
-pub const CA_CERT: &[u8] = include_bytes!("../certs/ca.der");
-pub const CA_CERT_PEM: &[u8] = include_bytes!("../certs/ca.crt");
-
-pub const SERVER_CERT: &[u8] = include_bytes!("../certs/server.der");
-pub const SERVER_KEY: &[u8] = include_bytes!("../certs/server.key.der");
+use http::{Method, StatusCode};
+use std::error::Error;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let vetis_adapter_config = VetisAdapterConfig::builder()
-        .interface("0.0.0.0")
-        .with_random_port()
-        .cert(Some(SERVER_CERT.to_vec()))
-        .key(Some(SERVER_KEY.to_vec()))
-        .ca(Some(CA_CERT.to_vec()))
-        .build();
+async fn main() -> Result<(), Box<dyn Error>> {
+    let config = EasyHttpMockConfig::<VetisAdapter>::default();
+    let server = EasyHttpMock::new(config);
+    let mut server = match server {
+        Ok(server) => server,
+        Err(err) => {
+            panic!("Failed to create mock server: {}", err);
+        }
+    };
 
-    let config = EasyHttpMockConfig::<VetisAdapter>::builder()
-        .server_config(vetis_adapter_config)
-        .build();
+    let mock = Mock::of(
+        given(method(Method::GET).and(path("/test"))).will_return(
+            StatusCode::OK
+                .respond()
+                .with_body(b"teste"),
+        ),
+    );
 
-    let mut server = EasyHttpMock::new(config)?;
-    #[allow(unused_must_use)]
-    let result = server
-        .start(|_| async move {
-            Ok(Response::builder()
-                .status(StatusCode::OK)
-                .text("Hello World"))
-        })
-        .await;
-
-    result.unwrap_or_else(|err| {
-        panic!("Failed to start mock server: {}", err);
-    });
-
-    let client = Client::builder()
-        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
-        .build();
-
-    let url = server.url("/anything");
-    let request = DeboaRequest::get(url)?.build()?;
-
-    let response = client
-        .execute(request)
-        .await?;
-
-    if response.status() == StatusCode::OK {
-        println!("Request executed successfully");
-    }
-
-    server
-        .stop()
-        .await?;
+    server.register_mock(mock).await?;;
 
     Ok(())
 }
@@ -144,9 +100,9 @@ Adapter for vetis using tokio runtime.
 Licensed under either of
 
 - Apache License, Version 2.0
-  (LICENSE-APACHE or https://www.apache.org/licenses/LICENSE-2.0)
+  (LICENSE-APACHE or <https://www.apache.org/licenses/LICENSE-2.0>)
 - MIT license
-  (LICENSE-MIT or https://opensource.org/licenses/MIT)
+  (LICENSE-MIT or <https://opensource.org/licenses/MIT>)
 
 at your option.
 

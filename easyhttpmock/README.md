@@ -4,7 +4,7 @@
 
 This is the main crate for EasyHttpMock. It provides the core functionality for creating HTTP mock servers.
 
-# Quick Start
+## Quick Start
 
 Add EasyHttpMock to your `Cargo.toml`:
 
@@ -17,9 +17,9 @@ easyhttpmock = { version = "0.1.0" }
 Licensed under either of
 
 - Apache License, Version 2.0
-  (LICENSE-APACHE or https://www.apache.org/licenses/LICENSE-2.0)
+  (LICENSE-APACHE or <https://www.apache.org/licenses/LICENSE-2.0>)
 - MIT license
-  (LICENSE-MIT or https://opensource.org/licenses/MIT)
+  (LICENSE-MIT or <https://opensource.org/licenses/MIT>)
 
 at your option.
 

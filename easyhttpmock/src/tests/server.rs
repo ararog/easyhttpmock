@@ -1,6 +1,18 @@
 use std::{error::Error, sync::Arc};
 
-use crate::{errors::EasyHttpMockError, mock::Mock, server::ServerAdapter, EasyHttpMock};
+use caramelo::{
+    expect,
+    matchers::{ge, lt},
+    MatcherExt,
+};
+
+use crate::{
+    config::EasyHttpMockConfig,
+    errors::EasyHttpMockError,
+    mock::Mock,
+    server::{PortGenerator, ServerAdapter},
+    EasyHttpMock,
+};
 
 #[derive(Debug, Clone)]
 pub struct TestServerConfig {
@@ -61,6 +73,13 @@ impl ServerAdapter for TestServer {
     }
 }
 
+impl PortGenerator<TestServer> for TestServerConfig {
+    fn with_random_port(self) -> Self {
+        let port = rand::random_range(9000..65535);
+        Self { port, ..self }
+    }
+}
+
 #[test]
 fn test_server() -> Result<(), Box<dyn Error>> {
     let mock_server = EasyHttpMock::<TestServer>::new(crate::config::EasyHttpMockConfig {
@@ -76,6 +95,23 @@ fn test_server() -> Result<(), Box<dyn Error>> {
         8080,
         "server port should be 8080"
     );
+
+    Ok(())
+}
+
+#[test]
+fn test_random_port() -> Result<(), Box<dyn Error>> {
+    let mock_server = EasyHttpMock::<TestServer>::new(EasyHttpMockConfig {
+        server_config: TestServerConfig { port: 0, interface: "127.0.0.1".to_string() },
+        base_url: None,
+    })?;
+
+    let config = mock_server
+        .config
+        .server_config
+        .with_random_port();
+
+    expect(config.port).to_be(ge(9000).and(lt(65535)));
 
     Ok(())
 }

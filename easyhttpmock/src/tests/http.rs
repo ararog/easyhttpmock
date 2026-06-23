@@ -12,7 +12,7 @@ fn test_path_matcher() {
         .empty()
         .unwrap();
 
-    expect(request).to_have(path(r"^/api/.*$"));
+    expect(request).to_have(path(r"^/api/.*$").and(method("GET")));
 }
 
 #[test]
@@ -22,7 +22,7 @@ fn test_path_matcher_panic() {
         .empty()
         .unwrap();
 
-    expect(request).to_have(path(r"^/api/.*$"));
+    expect(request).to_have(path(r"^/api/.*$").and(method(Method::GET)));
 }
 
 #[test]

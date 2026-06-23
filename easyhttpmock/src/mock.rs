@@ -1,11 +1,12 @@
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
-
+use crate::{
+    matchers::{and, or},
+    server::ServerAdapter,
+    EasyHttpMock, HttpMockResult,
+};
 use bytes::Bytes;
-use caramelo::{expect, matchers::and, TypedMatcher};
+use caramelo::{MatchType, Matcher, TypedMatcher};
 use http::{request::Parts, HeaderMap, Method, StatusCode, Uri};
-
-use crate::{matchers::HttpMatcher, server::ServerAdapter, EasyHttpMock, HttpMockResult};
-
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 /// State container for mock data
 pub struct MockState {
     inner: Arc<Mock>,
@@ -28,12 +29,12 @@ impl MockState {
     pub async fn use_on<S: ServerAdapter>(
         self,
         server: &mut EasyHttpMock<S>,
-    ) -> HttpMockResult<Self> {
+    ) -> HttpMockResult<()> {
         server
-            .register_mock(&self)
+            .register_mock(self)
             .await?;
 
-        Ok(self)
+        Ok(())
     }
 }
 
@@ -54,49 +55,25 @@ impl Mock {
     pub fn request(&self) -> &RequestMock {
         &self.request
     }
-
-    #[inline]
-    /// Match this mock with an actual request
-    pub fn match_with(&self, request: Request) {
-        // TODO: Implement matching logic
-        let expect = expect(request);
-        let matchers: Vec<Box<dyn TypedMatcher<Request>>> = self
-            .request
-            .matchers
-            .iter()
-            .fold(Vec::new(), |mut acc, m| {
-                acc.push(Box::new(m.clone()));
-                acc
-            });
-        expect.to_match(and(matchers));
-    }
 }
 
 #[inline]
 /// Add a matcher to this request
-pub fn given(matcher: HttpMatcher) -> RequestMock {
-    RequestMock { matchers: vec![matcher], respond: None }
+pub fn given(matcher: impl TypedMatcher<Request> + Send + Sync + 'static) -> RequestMock {
+    RequestMock { matcher: Arc::from(matcher), respond: None }
 }
 
 /// Represents a mock request
 pub struct RequestMock {
-    matchers: Vec<HttpMatcher>,
+    matcher: Arc<dyn TypedMatcher<Request> + Send + Sync + 'static>,
     respond: Option<Respond>,
 }
 
 impl RequestMock {
     #[inline]
-    /// Add a matcher to this request
-    pub fn and(mut self, matcher: HttpMatcher) -> Self {
-        self.matchers
-            .push(matcher);
-        self
-    }
-
-    #[inline]
-    /// Check if this request matches the given request
-    pub fn matchers(&self) -> &Vec<HttpMatcher> {
-        &self.matchers
+    /// Get the matcher for this request
+    pub fn matcher(&self) -> &Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
+        &self.matcher
     }
 
     #[inline]
@@ -112,6 +89,56 @@ impl RequestMock {
         self.respond = Some(respond);
         self
     }
+}
+
+impl Matcher<Request> for Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
+    fn matches(&self, request: &Request) -> bool {
+        self.as_ref()
+            .matches(request)
+    }
+
+    fn description(&self) -> String {
+        self.as_ref()
+            .description()
+    }
+}
+
+impl TypedMatcher<Request> for Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
+    fn matcher_type(&self) -> MatchType {
+        self.as_ref()
+            .matcher_type()
+    }
+}
+/// Extension trait for adding AND/OR combinators to matchers
+pub trait AsyncMatcherExt<T>: TypedMatcher<T> + Sized + 'static
+where
+    T: Send + Sync + 'static,
+{
+    /// Combines this matcher with another using AND logic
+    fn and<M>(self, matcher: M) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
+    where
+        Self: Send + Sync,
+        M: TypedMatcher<T> + Send + Sync + 'static,
+    {
+        and(vec![Arc::new(self), Arc::new(matcher)])
+    }
+
+    /// Combines this matcher with another using OR logic
+    fn or<M>(self, matcher: M) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
+    where
+        Self: Send + Sync,
+        M: TypedMatcher<T> + Send + Sync + 'static,
+    {
+        or(vec![Arc::new(self), Arc::new(matcher)])
+    }
+}
+
+/// Implementation of AsyncMatcherExt for any type that implements TypedMatcher
+impl<M, T> AsyncMatcherExt<T> for M
+where
+    M: TypedMatcher<T> + Send + Sync + 'static,
+    T: Send + Sync + 'static,
+{
 }
 
 /// Extension trait for StatusCode to create responses

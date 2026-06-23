@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use caramelo::MatchType::ToHave;
 use caramelo::Matcher;
 use caramelo::TypedMatcher;
 
-use crate::matchers::HttpMatcher;
 use crate::mock::Request;
 
 pub use self::json::*;
@@ -29,10 +30,10 @@ pub use self::xml::*;
 ///
 /// let matcher = body(r"^Hello World$");
 /// ```
-pub fn body(value: &str) -> HttpMatcher {
+pub fn body(value: &str) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
     let regex = regex::Regex::new(value);
     match regex {
-        Ok(regex) => HttpMatcher::Body(Body(regex)),
+        Ok(regex) => Arc::new(Body(regex)),
         Err(_) => panic!("Invalid regex pattern"),
     }
 }
@@ -80,11 +81,13 @@ impl TypedMatcher<Request> for Body {
 
 #[cfg(feature = "json")]
 pub(crate) mod json {
+    use std::sync::Arc;
+
     use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
     use jsonpath_rust::JsonPath;
     use sonic_rs::Serialize;
 
-    use crate::{matchers::HttpMatcher, mock::Request};
+    use crate::mock::Request;
 
     /// Creates a matcher that checks if the request body matches the given JSON exactly.
     ///
@@ -103,9 +106,11 @@ pub(crate) mod json {
     ///
     /// let matcher = exact_json_body(&serde_json::json!({"name": "John", "age": 30}));
     /// ```
-    pub fn exact_json_body<T: Serialize>(value: &T) -> HttpMatcher {
+    pub fn exact_json_body<T: Serialize>(
+        value: &T,
+    ) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
         match sonic_rs::to_string(value) {
-            Ok(json) => HttpMatcher::ExactJson(BodyWithExactJson(json)),
+            Ok(json) => Arc::new(BodyWithExactJson(json)),
             Err(e) => panic!("Failed to serialize JSON: {}", e),
         }
     }
@@ -167,8 +172,10 @@ pub(crate) mod json {
     ///
     /// let matcher = partial_json_body(r#"$.name"#);
     /// ```
-    pub fn partial_json_body(value: &str) -> HttpMatcher {
-        HttpMatcher::PartialJson(BodyWithPartialJson(value.to_owned()))
+    pub fn partial_json_body(
+        value: &str,
+    ) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
+        Arc::new(BodyWithPartialJson(value.to_owned()))
     }
 
     #[derive(Clone)]
@@ -224,12 +231,14 @@ pub(crate) mod json {
 
 #[cfg(feature = "xml")]
 pub(crate) mod xml {
+    use std::sync::Arc;
+
     use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
     use serde::Serialize;
     use serde_xml_rs::to_string;
     use simdxml::parse;
 
-    use crate::{matchers::HttpMatcher, mock::Request};
+    use crate::mock::Request;
 
     /// Creates a matcher that checks if the request body matches the given XML exactly.
     ///
@@ -258,9 +267,11 @@ pub(crate) mod xml {
     ///     age: 30,
     /// });
     /// ```
-    pub fn exact_xml_body<T: Serialize>(value: &T) -> HttpMatcher {
+    pub fn exact_xml_body<T: Serialize>(
+        value: &T,
+    ) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
         match to_string(value) {
-            Ok(xml) => HttpMatcher::ExactXml(BodyWithExactXml(xml)),
+            Ok(xml) => Arc::new(BodyWithExactXml(xml)),
             Err(e) => panic!("Failed to serialize XML: {}", e),
         }
     }
@@ -332,8 +343,8 @@ pub(crate) mod xml {
     ///
     /// let matcher = partial_xml_body(r#"//name"#);
     /// ```
-    pub fn partial_xml_body(value: &str) -> HttpMatcher {
-        HttpMatcher::PartialXml(BodyWithPartialXml(value.to_owned()))
+    pub fn partial_xml_body(value: &str) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
+        Arc::new(BodyWithPartialXml(value.to_owned()))
     }
 
     #[derive(Clone)]
