@@ -1,11 +1,3 @@
-use std::{error::Error, sync::Arc};
-
-use caramelo::{
-    expect,
-    matchers::{ge, lt},
-    MatcherExt,
-};
-
 use crate::{
     config::EasyHttpMockConfig,
     errors::EasyHttpMockError,
@@ -13,6 +5,12 @@ use crate::{
     server::{PortGenerator, ServerAdapter},
     EasyHttpMock,
 };
+use caramelo::{
+    expect,
+    matchers::{ge, lt},
+    MatcherExt,
+};
+use std::{error::Error, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct TestServerConfig {
