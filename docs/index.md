@@ -59,6 +59,14 @@ You can create a new project from the template using `cargo generate`:
 - [Migration Guide](./MIGRATION_GUIDE.md)
 - [Contributing Guide](./CONTRIBUTING.md)
 
+## Other Projects
+
+- [caramelo](https://crates.io/crates/caramelo) - Assertion based test framrwork
+- [deboa](https://crates.io/crates/deboa) - HTTP client
+- [sofie](https://crates.io/crates/sofie) - Fullstack web framework
+- [uget](https://crates.io/crates/uget) - CLI HTTP client
+- [vetis](https://crates.io/crates/vetis) - Very Tiny Http server
+
 ## License
 
 This project is licensed under the [MIT License](./LICENSE.md).
