@@ -3402,9 +3402,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vetis"
-version = "0.1.4-beta.7"
+version = "0.1.4-beta.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aec48a57e664a76705283f30ef38d533e7f854133e627e29f20943f41fb702f9"
+checksum = "57f7bcb14fbdf6165bdd326aab262ba772a96a810d02c82f6cef610f4847750a"
 dependencies = [
  "argon2",
  "async-lock",

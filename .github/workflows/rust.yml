@@ -2,7 +2,7 @@ name: Rust
 
 permissions:
   contents: read
-  
+
 on:
   push:
     branches: [ "**" ]
@@ -16,11 +16,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-    - uses: Swatinem/rust-cache@v2
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
 
-    - name: Run tests
-      run: |
-        cargo test
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
 
+      - name: Run all tests
+        run: |
+          cargo nextest run
