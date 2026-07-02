@@ -858,6 +858,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "jsonpath-rust",
+ "once_cell",
  "rand 0.10.1",
  "regex",
  "serde",

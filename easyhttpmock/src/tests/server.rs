@@ -58,6 +58,10 @@ impl ServerAdapter for TestServer {
         &self.config
     }
 
+    fn config_mut(&mut self) -> &mut Self::Config {
+        &mut self.config
+    }
+
     fn register_mock(&mut self, mock: Arc<Mock>) {
         self.mock = Some(mock);
     }

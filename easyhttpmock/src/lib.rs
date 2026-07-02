@@ -1,10 +1,9 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
-use std::ops::{Deref, DerefMut};
-
 use crate::{
     config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::MockState, server::ServerAdapter,
 };
+use std::ops::{Deref, DerefMut};
 
 /// Configuration module
 pub mod config;

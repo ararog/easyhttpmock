@@ -12,7 +12,7 @@ use vetis_tokio::{
 use easyhttpmock::{
     errors::{EasyHttpMockError, MockError, ServerError},
     mock::{Mock, Request},
-    server::{PortGenerator, ServerAdapter},
+    server::{generate_randon_port, PortGenerator, ServerAdapter},
     HttpMockResult,
 };
 
@@ -130,7 +130,7 @@ impl VetisAdapterConfigBuilder {
 }
 
 /// Configuration for the Vetis adapter.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct VetisAdapterConfig {
     hostname: String,
     interface: String,
@@ -156,7 +156,7 @@ impl Default for VetisAdapterConfig {
             hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
-            port: rand::random_range(9000..65535),
+            port: generate_randon_port(),
             cert: None,
             key: None,
             ca: None,
@@ -179,7 +179,7 @@ impl VetisAdapterConfig {
             hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
-            port: rand::random_range(9000..65535),
+            port: generate_randon_port(),
             cert: None,
             key: None,
             ca: None,
@@ -320,6 +320,14 @@ impl ServerAdapter for VetisAdapter {
     /// The configuration of the server.
     fn config(&self) -> &Self::Config {
         &self.config
+    }
+
+    /// Returns a mutable reference to the configuration of the server.
+    ///
+    /// # Returns
+    /// A mutable reference to the configuration of the server.
+    fn config_mut(&mut self) -> &mut Self::Config {
+        &mut self.config
     }
 
     /// Sets the mock to handle incoming requests.

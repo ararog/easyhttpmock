@@ -2,7 +2,7 @@ use caramelo::expect;
 use easyhttpmock::{
     errors::{EasyHttpMockError, MockError, ServerError},
     mock::{Mock, Request},
-    server::{PortGenerator, ServerAdapter},
+    server::{generate_randon_port, PortGenerator, ServerAdapter},
     HttpMockResult,
 };
 use http_body_util::BodyExt;
@@ -128,7 +128,7 @@ impl VetisAdapterConfigBuilder {
 }
 
 /// Configuration for the Vetis adapter.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct VetisAdapterConfig {
     hostname: String,
     interface: String,
@@ -155,7 +155,7 @@ impl Default for VetisAdapterConfig {
             hostname: "localhost".into(),
             interface: "0.0.0.0".into(),
             protocol: Protocol::Http1,
-            port: rand::random_range(9000..65535),
+            port: generate_randon_port(),
             cert: None,
             key: None,
             ca: None,
@@ -260,7 +260,7 @@ pub struct VetisAdapter {
 
 impl PortGenerator<VetisAdapter> for VetisAdapterConfigBuilder {
     fn with_random_port(self) -> Self {
-        let port = rand::random_range(9000..65535);
+        let port = generate_randon_port();
         self.port(port)
     }
 }
@@ -320,6 +320,14 @@ impl ServerAdapter for VetisAdapter {
     /// The configuration of the server.
     fn config(&self) -> &Self::Config {
         &self.config
+    }
+
+    /// Returns the configuration of the server.
+    ///
+    /// # Returns
+    /// The configuration of the server.
+    fn config_mut(&mut self) -> &mut Self::Config {
+        &mut self.config
     }
 
     /// Sets the mock to handle incoming requests.
