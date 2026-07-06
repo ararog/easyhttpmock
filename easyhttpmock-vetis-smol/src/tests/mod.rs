@@ -35,12 +35,8 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
         .server_config(vetis_adapter_config)
         .build();
 
-    let server = EasyHttpMock::new(config);
-    let mut server = match server {
-        Ok(server) => server,
-        Err(err) => {
-            panic!("Failed to create mock server: {}", err);
-        }
+    let Ok(mut server) = EasyHttpMock::new(config) else {
+        panic!("Failed to create mock server");
     };
 
     let mock = Mock::of(

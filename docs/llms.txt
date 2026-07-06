@@ -1,7 +1,7 @@
 # EasyHttpMock
 
-**EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients. 
-Built to work with any web server, it provides a clean, intuitive API for creating realistic mock endpoints 
+**EasyHttpMock** is a powerful yet simple HTTP mock server designed specifically for testing HTTP clients.
+Built to work with any web server, it provides a clean, intuitive API for creating realistic mock endpoints
 that simulate real-world API behavior, making your testing workflow faster and more reliable.
 
 ## Installation
@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     server
         .stop()
         .await?;
-    
+
     Ok(())
 }
 ```
@@ -97,4 +97,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Blog Posts
 
-- Coming soon
+- [API testing with EasyHttpMock](https://dev.to/rogrio_arajo_55dae16f0d/api-testing-with-easyhttpmock-4dko)

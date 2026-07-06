@@ -11,13 +11,7 @@ use std::error::Error;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let config = EasyHttpMockConfig::<VetisAdapter>::default();
-    let server = EasyHttpMock::new(config);
-    let mut server = match server {
-        Ok(server) => server,
-        Err(err) => {
-            panic!("Failed to create mock server: {}", err);
-        }
-    };
+    let mut server = EasyHttpMock::new(config)?;
 
     let mock = Mock::of(
         given(method(Method::GET).and(path("/test"))).will_return(
