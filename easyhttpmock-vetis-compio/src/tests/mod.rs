@@ -4,7 +4,7 @@ use deboa::{
     request::get,
     HttpClient,
 };
-use deboa_tokio::cert::Certificate;
+use deboa_compio::cert::DeboaCertificate;
 use easyhttpmock::{
     config::EasyHttpMockConfig,
     matchers::{method, path},
@@ -14,13 +14,13 @@ use easyhttpmock::{
 };
 use http::StatusCode;
 use std::error::Error;
-use vetis_tokio::Protocol;
+use vetis_compio::Protocol;
 
 const CA_CERT: &[u8] = include_bytes!("../../../certs/ca.der");
 const SERVER_CERT: &[u8] = include_bytes!("../../../certs/server.der");
 const SERVER_KEY: &[u8] = include_bytes!("../../../certs/server.key.der");
 
-#[tokio::test]
+#[compio::test]
 async fn test_mock_request() -> Result<(), Box<dyn Error>> {
     let server_cert = SERVER_CERT;
     let server_key = SERVER_KEY;
@@ -41,18 +41,20 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
         panic!("Failed to create mock server");
     };
 
-    Mock::of(
+    let mock = Mock::of(
         given(path("/test").and(method("GET"))).will_return(
             StatusCode::OK
                 .respond()
                 .with_body(b"teste"),
         ),
-    )
-    .use_on(&mut server)
-    .await?;
+    );
 
-    let client = deboa_tokio::Client::builder()
-        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
+    server
+        .register_mock(mock)
+        .await?;
+
+    let client = deboa_compio::Client::builder()
+        .certificate(DeboaCertificate::from_slice(CA_CERT, ContentEncoding::DER))
         .build();
 
     let request = get(server.url("/test"))?.build()?;

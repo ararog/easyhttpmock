@@ -1,6 +1,10 @@
 use crate::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
-use deboa::{request::get, HttpClient};
-use deboa_smol::cert::{Certificate, ContentEncoding};
+use deboa::{
+    cert::{Certificate as _, ContentEncoding},
+    request::get,
+    HttpClient,
+};
+use deboa_smol::cert::{Certificate};
 use easyhttpmock::{
     config::EasyHttpMockConfig,
     matchers::{method, path},

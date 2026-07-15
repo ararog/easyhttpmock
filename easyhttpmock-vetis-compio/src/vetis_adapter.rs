@@ -7,11 +7,11 @@ use easyhttpmock::{
 };
 use http_body_util::BodyExt;
 use std::sync::Arc;
-use vetis_smol::{
+use vetis_compio::{
     handler_fn,
     http::Response,
     virtual_host::{path::HandlerPath, VirtualHostImpl},
-    Protocol, ServerConfig, Vetis, VetisServer
+    Protocol, ServerConfig, Vetis, VetisServer,
 };
 
 /// Builder for VetisAdapterConfig
@@ -237,7 +237,7 @@ impl VetisAdapterConfig {
 
 impl From<VetisAdapterConfig> for ServerConfig {
     fn from(config: VetisAdapterConfig) -> Self {
-        let listener_config = vetis_smol::ListenerConfig::builder()
+        let listener_config = vetis_compio::ListenerConfig::builder()
             .interface(&config.interface)
             .protocol(config.protocol)
             .port(config.port)
@@ -372,7 +372,7 @@ impl ServerAdapter for VetisAdapter {
 
                     let mut data = Vec::<u8>::new();
                     let Ok(body_data) = body.collect().await else {
-                        return Err(vetis_smol::errors::VetisError::Handler(
+                        return Err(vetis_compio::errors::VetisError::Handler(
                             "Failed to collect body".to_string(),
                         ));
                     };
@@ -394,7 +394,7 @@ impl ServerAdapter for VetisAdapter {
                             .status(respond.status_code())
                             .bytes(&respond.body()))
                     } else {
-                        Err(vetis_smol::errors::VetisError::Handler(
+                        Err(vetis_compio::errors::VetisError::Handler(
                             "Missing respond mock".to_string(),
                         ))
                     }
@@ -404,7 +404,7 @@ impl ServerAdapter for VetisAdapter {
 
         let hostname = self.hostname();
 
-        let host_config = vetis_smol::VirtualHostConfig::builder()
+        let host_config = vetis_compio::VirtualHostConfig::builder()
             .hostname(&hostname)
             .root_directory(".")
             .port(self.config.port());
@@ -424,7 +424,7 @@ impl ServerAdapter for VetisAdapter {
                     .as_ref(),
             ) {
             host_config.security(
-                vetis_smol::SecurityConfig::builder()
+                vetis_compio::SecurityConfig::builder()
                     .cert_from_bytes(cert.clone())
                     .key_from_bytes(key.clone())
                     .ca_cert_from_bytes(ca.clone())

@@ -1,6 +1,6 @@
 [package]
 name = "easyhttpmock-vetis-tokio"
-version = "0.1.0-beta.6"
+version = "0.1.0-beta.7"
 edition.workspace = true
 authors.workspace = true
 repository.workspace = true
@@ -31,12 +31,17 @@ http = "1.4.0"
 http-body-util = "0.1.3"
 rand = { version = "0.10.0", default-features = false }
 tokio = { version = "1.50.0", default-features = false }
-vetis-tokio = { version = "0.1.0-beta.3", features = [
+vetis-tokio = { version = ">= 0.1.0-beta.6", features = [
   "http2",
   "rust-tls",
 ], default-features = false }
 
 [dev-dependencies]
-deboa = "0.1.0-beta.17"
-deboa-tokio = "0.1.0-beta.4"
+deboa = ">= 0.1.0-beta.22"
+deboa-tokio = { version = ">= 0.1.0-beta.9", default-features = false, features = [
+  "http2",
+  "rust-tls",
+  "default-rustls-provider",
+  "default-rustls-verifier",
+] }
 tokio = { version = "1.50.0", default-features = false, features = ["macros"] }

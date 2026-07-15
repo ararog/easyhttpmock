@@ -1,19 +1,17 @@
-use std::sync::Arc;
-
 use caramelo::expect;
-use http_body_util::BodyExt;
-use vetis_tokio::{
-    handler_fn,
-    http::Response,
-    virtual_host::{path::HandlerPath, VirtualHostImpl},
-    Protocol, ServerConfig, Vetis,
-};
-
 use easyhttpmock::{
     errors::{EasyHttpMockError, MockError, ServerError},
     mock::{Mock, Request},
     server::{generate_randon_port, PortGenerator, ServerAdapter},
     HttpMockResult,
+};
+use http_body_util::BodyExt;
+use std::sync::Arc;
+use vetis_tokio::{
+    handler_fn,
+    http::Response,
+    virtual_host::{path::HandlerPath, VirtualHostImpl},
+    Protocol, ServerConfig, Vetis, VetisServer,
 };
 
 /// Builder for VetisAdapterConfig
