@@ -16,6 +16,8 @@ rust-version.workspace = true
 all-features = true
 
 [features]
+default = ["http2"]
+
 xml = ["easyhttpmock/xml"]
 json = ["easyhttpmock/json"]
 http1 = ["vetis-compio/http1"]
@@ -35,6 +37,7 @@ vetis-compio = { version = ">= 0.1.0-beta.2", features = [
   "http2",
   "rust-tls",
 ], default-features = false }
+send_wrapper = "0.6.0"
 
 [dev-dependencies]
 deboa = { version = ">= 0.1.0-beta.22" }

@@ -6,6 +6,7 @@ use easyhttpmock::{
     HttpMockResult,
 };
 use http_body_util::BodyExt;
+use send_wrapper::SendWrapper;
 use std::sync::Arc;
 use vetis_compio::{
     handler_fn,
@@ -367,7 +368,7 @@ impl ServerAdapter for VetisAdapter {
                 // Since handler function is defined here, we need to clone the mocker
                 // to move it into the async block
                 let mock = mock_clone.clone();
-                async move {
+                let future  = async move {
                     let (parts, body) = request.into_parts();
 
                     let mut data = Vec::<u8>::new();
@@ -398,7 +399,8 @@ impl ServerAdapter for VetisAdapter {
                             "Missing respond mock".to_string(),
                         ))
                     }
-                }
+                };
+                SendWrapper::new(future)
             }))
             .build();
 

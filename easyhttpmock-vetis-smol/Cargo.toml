@@ -39,8 +39,8 @@ vetis-smol = { version = ">= 0.1.0-beta.6", features = [
 ], default-features = false }
 
 [dev-dependencies]
-deboa = ">= 0.1.0-beta.22"
-deboa-smol = { version = ">= 0.1.0-beta.9", default-features = false, features = [
+deboa = ">= 0.1.0-beta.24"
+deboa-smol = { version = ">= 0.1.0-beta.14", default-features = false, features = [
   "http2",
   "rust-tls",
   "default-rustls-provider",
