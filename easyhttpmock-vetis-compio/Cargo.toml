@@ -40,8 +40,8 @@ vetis-compio = { version = ">= 0.1.0-beta.2", features = [
 send_wrapper = "0.6.0"
 
 [dev-dependencies]
-deboa = { version = ">= 0.1.0-beta.22" }
-deboa-compio = { version = ">= 0.1.1-beta.4", default-features = false, features = [
+deboa = { version = ">= 0.1.0-beta.25" }
+deboa-compio = { version = ">= 0.1.1-beta.10", default-features = false, features = [
   "http2",
   "rust-tls",
   "default-rustls-provider",
