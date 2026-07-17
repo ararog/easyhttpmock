@@ -888,9 +888,9 @@ dependencies = [
 
 [[package]]
 name = "deboa-compio"
-version = "0.1.1-beta.5"
+version = "0.1.1-beta.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b03f0d33ebf191f1dd52944e69afe3c98f91b073490047c7279ee896f7abf6d"
+checksum = "059599f0eeed0f38e939df122a68ba2966eb4f02ff7f7c99654f42b86a51576d"
 dependencies = [
  "async-trait",
  "base64",
