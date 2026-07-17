@@ -1103,7 +1103,7 @@ dependencies = [
 
 [[package]]
 name = "easyhttpmock-vetis-compio"
-version = "0.1.0"
+version = "0.1.1-beta.1"
 dependencies = [
  "caramelo",
  "compio",
@@ -1119,7 +1119,7 @@ dependencies = [
 
 [[package]]
 name = "easyhttpmock-vetis-smol"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "caramelo",
  "deboa",
@@ -1136,7 +1136,7 @@ dependencies = [
 
 [[package]]
 name = "easyhttpmock-vetis-tokio"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 dependencies = [
  "caramelo",
  "deboa",
@@ -3521,9 +3521,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vetis"
-version = "0.1.4-beta.11"
+version = "0.1.4-beta.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e44d5b52fb1bc27881b4ca4375cb26c21de218621342c7ef31459bea1d3626e"
+checksum = "3214b925436e76a35b33b7d643a5f9c30a9d7c4d19d273f693c570b095a330c3"
 dependencies = [
  "argon2",
  "async-lock",
@@ -3548,9 +3548,9 @@ dependencies = [
 
 [[package]]
 name = "vetis-compio"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d68027cc4b525b932e9faa6e72e154c0ef1a2aba3f329e3b28c8c6078e86ec90"
+checksum = "2618653bbddf4811911f10492cee58bb9e86fceb32d317b43b654912f198be6a"
 dependencies = [
  "async-lock",
  "bytes",
@@ -3583,9 +3583,9 @@ dependencies = [
 
 [[package]]
 name = "vetis-smol"
-version = "0.1.0-beta.6"
+version = "0.1.0-beta.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b58fc9c3815f10a4eba9053d2ee9bec378acb233dd9d803f205a2403eefea410"
+checksum = "3d1227318f411af1b34728767fb404431df6011a368c3b189394c8d8ec4ecd88"
 dependencies = [
  "async-lock",
  "async-net",
@@ -3627,9 +3627,9 @@ dependencies = [
 
 [[package]]
 name = "vetis-tokio"
-version = "0.1.0-beta.6"
+version = "0.1.0-beta.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85aaf4e0edb237c7b4977ea2b1c5c4cf2708c66a46b136f12573c3a6da6011c2"
+checksum = "ea98db8b51b14215b30222ebf0f795679e8b8cedd457048ed96f4bf8281e0399"
 dependencies = [
  "async-lock",
  "bytes",

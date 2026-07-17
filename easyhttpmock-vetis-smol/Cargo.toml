@@ -1,6 +1,6 @@
 [package]
 name = "easyhttpmock-vetis-smol"
-version = "0.1.0-beta.7"
+version = "0.1.0-beta.8"
 edition.workspace = true
 authors.workspace = true
 repository.workspace = true
@@ -33,7 +33,7 @@ macro_rules_attribute = "0.2.2"
 rand = { version = "0.10.0", default-features = false }
 smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }
-vetis-smol = { version = ">= 0.1.0-beta.6", features = [
+vetis-smol = { version = ">= 0.1.0-beta.7", features = [
   "http2",
   "rust-tls",
 ], default-features = false }
