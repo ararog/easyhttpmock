@@ -1,10 +1,10 @@
 use crate::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
 use deboa::{
-    cert::{Certificate as _, ContentEncoding},
+    cert::{CertificateExt as _, ContentEncoding},
     request::get,
     HttpClient,
 };
-use deboa_smol::cert::{Certificate};
+use deboa_smol::{cert::DeboaCertificate, Client};
 use easyhttpmock::{
     config::EasyHttpMockConfig,
     matchers::{method, path},
@@ -12,11 +12,10 @@ use easyhttpmock::{
     server::PortGenerator,
     EasyHttpMock,
 };
-use http::StatusCode;
+use http::{StatusCode, Version};
 use macro_rules_attribute::apply;
 use smol_macros::test;
 use std::error::Error;
-use vetis_smol::Protocol;
 
 const CA_CERT: &[u8] = include_bytes!("../../../certs/ca.der");
 const SERVER_CERT: &[u8] = include_bytes!("../../../certs/server.der");
@@ -28,7 +27,7 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
     let server_key = SERVER_KEY;
 
     let vetis_adapter_config = VetisAdapterConfig::builder()
-        .protocol(Protocol::Http2)
+        .protocol_version(Version::HTTP_2)
         .with_random_port()
         .cert(server_cert.to_vec())
         .key(server_key.to_vec())
@@ -55,8 +54,8 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
         .register_mock(mock)
         .await?;
 
-    let client = deboa_smol::Client::builder()
-        .certificate(Certificate::from_slice(CA_CERT, ContentEncoding::DER))
+    let client = Client::builder()
+        .certificate(DeboaCertificate::from_slice(CA_CERT, ContentEncoding::DER))
         .build();
 
     let request = get(server.url("/test"))?.build()?;

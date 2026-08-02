@@ -31,14 +31,14 @@ http = "1.4.0"
 http-body-util = "0.1.3"
 rand = { version = "0.10.0", default-features = false }
 tokio = { version = "1.50.0", default-features = false }
-vetis-tokio = { version = ">= 0.1.0-beta.7", features = [
+vetis-tokio = { path = "../../vetis/vetis-tokio", features = [
   "http2",
   "rust-tls",
 ], default-features = false }
 
 [dev-dependencies]
-deboa = ">= 0.1.0-beta.25"
-deboa-tokio = { version = ">= 0.1.0-beta.15", default-features = false, features = [
+deboa = { version = "0.1.0" }
+deboa-tokio = { version = "0.1.0", default-features = false, features = [
   "http2",
   "rust-tls",
   "default-rustls-provider",

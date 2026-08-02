@@ -33,14 +33,14 @@ macro_rules_attribute = "0.2.2"
 rand = { version = "0.10.0", default-features = false }
 smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }
-vetis-smol = { version = ">= 0.1.0-beta.7", features = [
+vetis-smol = { path = "../../vetis/vetis-smol", features = [
   "http2",
   "rust-tls",
 ], default-features = false }
 
 [dev-dependencies]
-deboa = ">= 0.1.0-beta.25"
-deboa-smol = { version = ">= 0.1.0-beta.15", default-features = false, features = [
+deboa = { version = "0.1.0" }
+deboa-smol = { version = "0.1.0", default-features = false, features = [
   "http2",
   "rust-tls",
   "default-rustls-provider",

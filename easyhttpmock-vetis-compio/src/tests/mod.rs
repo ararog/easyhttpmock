@@ -1,10 +1,10 @@
 use crate::vetis_adapter::{VetisAdapter, VetisAdapterConfig};
 use deboa::{
-    cert::{Certificate as _, ContentEncoding},
+    cert::{CertificateExt, ContentEncoding},
     request::get,
-    HttpClient, HttpVersion,
+    HttpClient,
 };
-use deboa_compio::cert::DeboaCertificate;
+use deboa_compio::{cert::DeboaCertificate, Client};
 use easyhttpmock::{
     config::EasyHttpMockConfig,
     matchers::{method, path},
@@ -12,30 +12,20 @@ use easyhttpmock::{
     server::PortGenerator,
     EasyHttpMock,
 };
-use http::StatusCode;
+use http::{StatusCode, Version};
 use std::error::Error;
-use vetis_compio::Protocol;
 
 const CA_CERT: &[u8] = include_bytes!("../../../certs/ca.der");
 const SERVER_CERT: &[u8] = include_bytes!("../../../certs/server.der");
 const SERVER_KEY: &[u8] = include_bytes!("../../../certs/server.key.der");
 
-pub(crate) const fn deboa_default_protocol() -> HttpVersion {
+pub(crate) const fn default_protocol() -> Version {
     #[cfg(feature = "http1")]
-    return HttpVersion::Http1;
+    return Version::HTTP_11;
     #[cfg(feature = "http2")]
-    return HttpVersion::Http2;
+    return Version::HTTP_2;
     #[cfg(feature = "http3")]
-    return HttpVersion::Http3;
-}
-
-pub(crate) const fn vetis_default_protocol() -> Protocol {
-    #[cfg(feature = "http1")]
-    return Protocol::Http1;
-    #[cfg(feature = "http2")]
-    return Protocol::Http2;
-    #[cfg(feature = "http3")]
-    return Protocol::Http3;
+    return Version::HTTP_3;
 }
 
 #[compio::test]
@@ -44,7 +34,7 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
     let server_key = SERVER_KEY;
 
     let vetis_adapter_config = VetisAdapterConfig::builder()
-        .protocol(vetis_default_protocol())
+        .protocol_version(default_protocol())
         .with_random_port()
         .cert(server_cert.to_vec())
         .key(server_key.to_vec())
@@ -71,9 +61,8 @@ async fn test_mock_request() -> Result<(), Box<dyn Error>> {
         .register_mock(mock)
         .await?;
 
-    let client = deboa_compio::Client::builder()
+    let client = Client::builder()
         .certificate(DeboaCertificate::from_slice(CA_CERT, ContentEncoding::DER))
-        .protocol(deboa_default_protocol())
         .build();
 
     let request = get(server.url("/test"))?.build()?;
