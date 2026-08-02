@@ -149,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "async-lock"
-version = "3.4.1"
+version = "3.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fd03604047cee9b6ce9de9f70c6cd540a0520c813cbd49bae61f33ab80ed1dc"
+checksum = "290f7f2596bd5b78a9fec8088ccd89180d7f9f55b94b0576823bbbdc72ee8311"
 dependencies = [
  "event-listener",
  "event-listener-strategy",
@@ -264,6 +264,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "base64"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b25655df2c3cdd83c5e5b293b88acd880332b2ddadd7c30ac43144fdc0033da9"
+
+[[package]]
 name = "base64ct"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -275,7 +281,7 @@ version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f3c067aa24dd4ed5c79cf222a38f260c8f23d3b82a062fba3f28c6fe563b753"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "blowfish",
  "getrandom 0.4.3",
  "subtle",
@@ -858,12 +864,12 @@ dependencies = [
 
 [[package]]
 name = "deboa"
-version = "0.1.0-beta.25"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "617aa0908ecdf6b29a7b3e379195fc779b4d485937e71aaa997f4d19c9c991d3"
+checksum = "0420e86eca809d1efbf009ae21aec08ffb0e9c20051beeac6b100d954929ef1b"
 dependencies = [
- "async-trait",
- "base64",
+ "async-lock",
+ "base64 0.23.0",
  "bytes",
  "cookie",
  "futures",
@@ -876,10 +882,10 @@ dependencies = [
  "indexmap",
  "log",
  "minimime",
- "mockall",
  "rand 0.10.2",
  "regex",
  "serde",
+ "tackle",
  "thiserror",
  "time",
  "url",
@@ -893,7 +899,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8cf1d07dbbd6c0aa588a77bc30c11b87b522c6fc93d84e9910f48aebce54a7b1"
 dependencies = [
  "async-trait",
- "base64",
+ "base64 0.22.1",
  "bytes",
  "compio",
  "compio-tls",
@@ -929,12 +935,12 @@ dependencies = [
 
 [[package]]
 name = "deboa-smol"
-version = "0.1.0-beta.15"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "592ae00699ab3f2c1d3f10b158cdf7eafe8dd43417cc7ae67397befd14fdc115"
+checksum = "5d0f0ac80106254b2716103db24cf9111d9a13bda6683d039ebcfde68081ff03"
 dependencies = [
- "async-trait",
- "base64",
+ "async-lock",
+ "base64 0.23.0",
  "bytes",
  "cookie",
  "deboa",
@@ -961,6 +967,7 @@ dependencies = [
  "smol",
  "smol-hyper",
  "smol-macros",
+ "tackle",
  "thiserror",
  "time",
  "url",
@@ -975,7 +982,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e8460dce7128eb16245ef967f5a2465f4636da3fa1e16434d53686f31a41f02"
 dependencies = [
  "async-trait",
- "base64",
+ "base64 0.22.1",
  "bytes",
  "cookie",
  "deboa",
@@ -1420,7 +1427,7 @@ dependencies = [
  "libc",
  "log",
  "rustversion",
- "windows-link 0.1.3",
+ "windows-link 0.2.1",
  "windows-result",
 ]
 
@@ -3160,6 +3167,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "tackle"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48a2a03a080b83faa6cc1b702100fbb500613d50cb569fff76d5154ec0c0c84d"
+
+[[package]]
 name = "tagptr"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3532,7 +3545,7 @@ checksum = "3214b925436e76a35b33b7d643a5f9c30a9d7c4d19d273f693c570b095a330c3"
 dependencies = [
  "argon2",
  "async-lock",
- "base64",
+ "base64 0.22.1",
  "bcrypt",
  "bytes",
  "futures-util",
