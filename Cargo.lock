@@ -294,10 +294,11 @@ checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "caramelo"
-version = "0.1.1-beta.4"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ed5025efdb5f63d62c7c1268485accfa2aff9c4feb9146fb3bc58888ce646e2"
+checksum = "33deef64af530d522c35bdb407bfdb2f2c6a8062890c64828067e64805ec95ce"
 dependencies = [
+ "bytes",
  "http",
  "http-body",
  "http-body-util",
@@ -998,7 +999,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "easyhttpmock"
-version = "0.1.3-beta.14"
+version = "0.1.3"
 dependencies = [
  "bytes",
  "caramelo",
@@ -1036,7 +1037,7 @@ dependencies = [
 
 [[package]]
 name = "easyhttpmock-vetis-smol"
-version = "0.1.0-beta.8"
+version = "0.1.0"
 dependencies = [
  "caramelo",
  "deboa",
@@ -1053,7 +1054,7 @@ dependencies = [
 
 [[package]]
 name = "easyhttpmock-vetis-tokio"
-version = "0.1.0-beta.8"
+version = "0.1.0"
 dependencies = [
  "caramelo",
  "deboa",
@@ -3457,6 +3458,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "vetis"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41a819a9e8b04d67ae7c84f473e857fdb65e8f0a9a7c39e510b877ec73452d1a"
+dependencies = [
+ "async-lock",
+ "bytes",
+ "futures-util",
+ "http",
+ "http-body-util",
+ "http-serde",
+ "hyper-body-utils",
+ "log",
+ "radix_trie",
+ "rand 0.10.2",
+ "serde",
+ "serde_yaml_ng",
+ "socket2",
+ "thiserror",
+ "time",
+ "typetag",
+ "url",
+]
+
+[[package]]
 name = "vetis-compio"
 version = "0.1.0"
 dependencies = [
@@ -3486,12 +3512,14 @@ dependencies = [
  "time",
  "typetag",
  "url",
- "vetis",
+ "vetis 0.1.4",
 ]
 
 [[package]]
 name = "vetis-smol"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "398c463fd61a9f8ae387e72e5e5d7ccf540c2b0d12c722dd50f7cea1b509eb76"
 dependencies = [
  "async-lock",
  "async-net",
@@ -3528,12 +3556,14 @@ dependencies = [
  "time",
  "typetag",
  "url",
- "vetis",
+ "vetis 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "vetis-tokio"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "998b6cc5a6afd7cf73642e492710b94b8f489a3cc00d0ebc9216de584ad55b9b"
 dependencies = [
  "async-lock",
  "bytes",
@@ -3567,7 +3597,7 @@ dependencies = [
  "tokio-util",
  "typetag",
  "url",
- "vetis",
+ "vetis 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
