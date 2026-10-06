@@ -19,6 +19,7 @@ permalink: /
 - **Lightning Fast**: Powered by VeTiS for optimal performance
 - **Flexible Runtime**: Choose between Tokio or Smol async runtimes
 - **Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
+- **Websockets**: Can mock a real Websockets server
 - **Secure Testing**: Built-in TLS support for HTTPS endpoint testing
 - **Minimal Dependencies**: Lightweight footprint for your test suite
 
@@ -38,7 +39,7 @@ Please refer to [easyhttpmock-vetis-smol](./easyhttpmock-vetis-smol) or [easyhtt
 ## Crates
 
 | Crate | Description | Documentation |
-|-------|-------------|---------------|
+| ------- | ------------- | --------------- |
 | [easyhttpmock](./easyhttpmock) | Core HTTP server library | [![docs.rs](https://img.shields.io/docsrs/easyhttpmock/latest)](https://docs.rs/easyhttpmock) |
 | [easyhttpmock-vetis-smol](./easyhttpmock-vetis-smol) | Smol runtime support | [![docs.rs](https://img.shields.io/docsrs/easyhttpmock-vetis-smol/latest)](https://docs.rs/easyhttpmock-vetis-smol) |
 | [easyhttpmock-vetis-tokio](./easyhttpmock-vetis-tokio) | Tokio runtime support | [![docs.rs](https://img.shields.io/docsrs/easyhttpmock-vetis-tokio/latest)](https://docs.rs/easyhttpmock-vetis-tokio) |
@@ -64,6 +65,7 @@ You can create a new project from the template using `cargo generate`:
 - [caramelo](https://crates.io/crates/caramelo) - Assertion based test framrwork
 - [deboa](https://crates.io/crates/deboa) - HTTP client
 - [sofie](https://crates.io/crates/sofie) - Fullstack web framework
+- [tackle](https://crates.io/crates/tackle) - Hook system
 - [uget](https://crates.io/crates/uget) - CLI HTTP client
 - [vetis](https://crates.io/crates/vetis) - Very Tiny Http server
 

@@ -10,6 +10,7 @@
 - **Lightning Fast**: Powered by VeTiS for optimal performance
 - **Flexible Runtime**: Choose between Tokio or Smol async runtimes
 - **Full Protocol Support**: HTTP/1, HTTP/2, and HTTP/3 compatibility
+- **Websockets**: Can mock a real Websockets server
 - **Secure Testing**: Built-in TLS support for HTTPS endpoint testing
 - **Minimal Dependencies**: Lightweight footprint for your test suite
 
@@ -18,7 +19,7 @@
 Add EasyHttpMock to your `Cargo.toml`:
 
 ```toml
-easyhttpmock = { version = "0.1.1", features = ["tokio-rt", "http1"] }
+easyhttpmock_vetis_tokio = { version = "0.1.2" }
 ```
 
 ## Usage Example
@@ -69,23 +70,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 - **Debugging**: Reproduce API issues in a controlled environment
 - **Documentation**: Create interactive API examples
 
-## Supported Runtimes (via crates)
-
-- [tokio](https://github.com/tokio-rs/tokio) - High-performance async runtime
-- [smol](https://github.com/smol-rs/smol) - Lightweight async runtime
-
-## Crate Features
-
-- **http1** - HTTP/1 protocol support
-- **http2** (default) - HTTP/2 protocol support
-- **http3** - HTTP/3 protocol support
-- **rust-tls** (default) - TLS support
-
-## Subprojects
-
-### [easyhttpmock](https://github.com/easyhttpmock/easyhttpmock)
-
-Base crate for easyhttpmock.
+## Subcrates
 
 ### [easyhttpmock-vetis-smol](https://github.com/easyhttpmock/easyhttpmock-vetis-smol)
 
@@ -94,6 +79,14 @@ Adapter for vetis using smol runtime.
 ### [easyhttpmock-vetis-tokio](https://github.com/easyhttpmock/easyhttpmock-vetis-tokio)
 
 Adapter for vetis using tokio runtime.
+
+### [easyhttpmock-vetis-compio](https://github.com/easyhttpmock/easyhttpmock-vetis-compio)
+
+Adapter for vetis using compio runtime.
+
+### [easyhttpmock-vetis-glommio](https://github.com/easyhttpmock/easyhttpmock-vetis-glommio)
+
+Adapter for vetis using glommio runtime.
 
 ## License
 
