@@ -16,7 +16,9 @@ rust-version.workspace = true
 all-features = true
 
 [features]
-default = ["json", "xml"]
+default = ["multi-threaded", "json", "xml"]
+multi-threaded = []
+single-threaded = []
 json = ["dep:sonic-rs", "dep:serde_json", "dep:jsonpath-rust"]
 xml = ["dep:simdxml", "dep:serde", "dep:serde-xml-rs"]
 

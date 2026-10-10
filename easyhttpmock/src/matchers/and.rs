@@ -1,8 +1,8 @@
+use crate::{AsyncShared, SharedTypedMatcher};
 use caramelo::{
     MatchType::{self, To},
     Matcher, TypedMatcher,
 };
-use std::sync::Arc;
 
 /// Creates a matcher that matches values that satisfy all given matchers
 ///
@@ -14,10 +14,10 @@ use std::sync::Arc;
 ///
 /// expect("hello").to_match(and!(contains("ell"), contains("llo")));
 /// ```
-pub fn and<T: Send + Sync + 'static>(
-    matchers: Vec<Arc<dyn TypedMatcher<T> + Send + Sync + 'static>>,
-) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static> {
-    Arc::new(And { matchers })
+pub fn and<T: AsyncShared + 'static>(
+    matchers: Vec<SharedTypedMatcher<T>>,
+) -> SharedTypedMatcher<T> {
+    SharedTypedMatcher::new(And {matchers})
 }
 
 /// Matcher that combines multiple matchers with AND logic
@@ -30,23 +30,25 @@ pub fn and<T: Send + Sync + 'static>(
 ///
 /// expect("hello").to_match(and!(contains("ell"), contains("llo")));
 /// ```
-pub struct And<T: Send + Sync + 'static> {
-    matchers: Vec<Arc<dyn TypedMatcher<T> + Send + Sync + 'static>>,
+pub struct And<T: AsyncShared> {
+    matchers: Vec<SharedTypedMatcher<T>>,
 }
 
-unsafe impl<T: Send + Sync + 'static> Send for And<T> {}
-unsafe impl<T: Send + Sync + 'static> Sync for And<T> {}
+#[cfg(feature = "multi-threaded")]
+unsafe impl<T: AsyncShared> Send for And<T> {}
+#[cfg(feature = "multi-threaded")]
+unsafe impl<T: AsyncShared> Sync for And<T> {}
 
-impl<T: Send + Sync + 'static> And<T> {
+impl<T: AsyncShared> And<T> {
     /// Creates a new And matcher with the given matchers
-    pub fn new(matchers: Vec<Arc<dyn TypedMatcher<T> + Send + Sync + 'static>>) -> Self {
+    pub fn new(matchers: Vec<SharedTypedMatcher<T>>) -> Self {
         And { matchers }
     }
 }
 
 impl<T> Matcher<T> for And<T>
 where
-    T: Send + Sync + 'static,
+    T: AsyncShared,
 {
     fn matches(&self, value: &T) -> bool {
         self.matchers
@@ -65,7 +67,7 @@ where
 
 impl<T> TypedMatcher<T> for And<T>
 where
-    T: Send + Sync + 'static,
+    T: AsyncShared,
 {
     fn matcher_type(&self) -> MatchType {
         self.matchers

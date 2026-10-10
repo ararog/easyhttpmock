@@ -1,8 +1,8 @@
+use crate::{AsyncShared, SharedTypedMatcher};
 use caramelo::{
     MatchType::{self, To},
     Matcher, TypedMatcher,
 };
-use std::sync::Arc;
 
 /// Creates a matcher that matches values that satisfy any of the given matchers
 ///
@@ -14,10 +14,8 @@ use std::sync::Arc;
 ///
 /// expect("hello").to_match(or!(contains("ell"), contains("xyz")));
 /// ```
-pub fn or<T: Send + Sync + 'static>(
-    matchers: Vec<Arc<dyn TypedMatcher<T> + Send + Sync + 'static>>,
-) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static> {
-    Arc::new(Or { matchers })
+pub fn or<T: AsyncShared + 'static>(matchers: Vec<SharedTypedMatcher<T>>) -> SharedTypedMatcher<T> {
+    SharedTypedMatcher::new(Or { matchers })
 }
 
 /// Matcher that combines multiple matchers with OR logic
@@ -30,21 +28,23 @@ pub fn or<T: Send + Sync + 'static>(
 ///
 /// expect("hello").to_match(or!(contains("ell"), contains("xyz")));
 /// ```
-pub struct Or<T: Send + Sync + 'static> {
-    matchers: Vec<Arc<dyn TypedMatcher<T> + Send + Sync + 'static>>,
+pub struct Or<T: AsyncShared> {
+    matchers: Vec<SharedTypedMatcher<T>>,
 }
 
-unsafe impl<T: Send + Sync + 'static> Send for Or<T> {}
-unsafe impl<T: Send + Sync + 'static> Sync for Or<T> {}
+#[cfg(feature = "multi-threaded")]
+unsafe impl<T: AsyncShared> Send for Or<T> {}
+#[cfg(feature = "multi-threaded")]
+unsafe impl<T: AsyncShared> Sync for Or<T> {}
 
-impl<T: Send + Sync + 'static> Or<T> {
+impl<T: AsyncShared> Or<T> {
     /// Creates a new Or matcher with the given matchers
-    pub fn new(matchers: Vec<Arc<dyn TypedMatcher<T> + Send + Sync + 'static>>) -> Self {
+    pub fn new(matchers: Vec<SharedTypedMatcher<T>>) -> Self {
         Or { matchers }
     }
 }
 
-impl<T: Send + Sync + 'static> Matcher<T> for Or<T> {
+impl<T: AsyncShared> Matcher<T> for Or<T> {
     fn matches(&self, value: &T) -> bool {
         self.matchers
             .iter()
@@ -60,7 +60,7 @@ impl<T: Send + Sync + 'static> Matcher<T> for Or<T> {
     }
 }
 
-impl<T: Send + Sync + 'static> TypedMatcher<T> for Or<T> {
+impl<T: AsyncShared> TypedMatcher<T> for Or<T> {
     fn matcher_type(&self) -> MatchType {
         self.matchers
             .first()

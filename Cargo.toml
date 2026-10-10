@@ -20,7 +20,7 @@ caramelo = { version = "0.1.5" }
 #caramelo = { path = "../caramelo/caramelo" }
 http = "1.5.0"
 http-body-util = "0.1.5"
-rand = { version = "0.10.2", default-features = false }
+rand = { version = "0.10.3", default-features = false }
 
 [profile.release]
 strip = true

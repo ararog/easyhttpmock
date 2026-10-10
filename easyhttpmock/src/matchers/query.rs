@@ -1,6 +1,5 @@
-use crate::mock::Request;
+use crate::{SharedTypedMatcher, mock::Request};
 use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
-use std::sync::Arc;
 
 /// Creates a matcher that checks if the request query matches the given regex pattern.
 ///
@@ -23,13 +22,10 @@ use std::sync::Arc;
 ///
 /// let matcher = query_param(r"^/api/v1/.*$");
 /// ```
-pub fn query_param<T>(value: &str) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
-where
-    QueryParam: TypedMatcher<T>,
-{
+pub fn query_param(value: &str) -> SharedTypedMatcher<Request> {
     let regex = regex::Regex::new(value);
     match regex {
-        Ok(regex) => Arc::new(QueryParam(regex)),
+        Ok(regex) => SharedTypedMatcher::new(QueryParam(regex)),
         Err(_) => panic!("Invalid regex pattern"),
     }
 }
@@ -97,13 +93,13 @@ impl TypedMatcher<Request> for QueryParam {
 ///
 /// let matcher = query_value(r"^/api/v1/.*$");
 /// ```
-pub fn query_value<T>(value: &str) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
+pub fn query_value<T>(value: &str) -> SharedTypedMatcher<T>
 where
     QueryValue: TypedMatcher<T>,
 {
     let regex = regex::Regex::new(value);
     match regex {
-        Ok(regex) => Arc::new(QueryValue(regex)),
+        Ok(regex) => SharedTypedMatcher::new(QueryValue(regex)),
         Err(_) => panic!("Invalid regex pattern"),
     }
 }

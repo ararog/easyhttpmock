@@ -1,10 +1,8 @@
 use crate::{
-    matchers::{and, or},
-    server::ServerAdapter,
-    EasyHttpMock, HttpMockResult,
+    AsyncShared, AsyncTypedMatcher, EasyHttpMock, HttpMockResult, SharedTypedMatcher, matchers::{and, or}, server::ServerAdapter,
 };
 use bytes::Bytes;
-use caramelo::{MatchType, Matcher, TypedMatcher};
+use caramelo::TypedMatcher;
 use http::{request::Parts, HeaderMap, Method, StatusCode, Uri};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
@@ -60,21 +58,21 @@ impl Mock {
 
 #[inline]
 /// Add a matcher to this request
-pub fn given(matcher: impl TypedMatcher<Request> + Send + Sync + 'static) -> RequestMock {
-    RequestMock { matcher: Arc::from(matcher), respond: None }
+pub fn given(matcher: impl AsyncTypedMatcher<Request>) -> RequestMock {
+    RequestMock { matcher: SharedTypedMatcher::new(matcher), respond: None }
 }
 
 /// Represents a mock request
 pub struct RequestMock {
-    matcher: Arc<dyn TypedMatcher<Request> + Send + Sync + 'static>,
+    matcher: SharedTypedMatcher<Request>,
     respond: Option<Respond>,
 }
 
 impl RequestMock {
     #[inline]
     /// Get the matcher for this request
-    pub fn matcher(&self) -> &Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
-        &self.matcher
+    pub fn matcher(&self) -> SharedTypedMatcher<Request> {
+        self.matcher.clone()
     }
 
     #[inline]
@@ -92,56 +90,35 @@ impl RequestMock {
     }
 }
 
-// Our implemention of matchers is all related with Request type, we don't have
-// matchers expecting other input types.
-impl Matcher<Request> for Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
-    fn matches(&self, request: &Request) -> bool {
-        self.as_ref()
-            .matches(request)
-    }
-
-    fn description(&self) -> String {
-        self.as_ref()
-            .description()
-    }
-}
-
-// TypedMatcher implementation for Matcher implementation above
-impl TypedMatcher<Request> for Arc<dyn TypedMatcher<Request> + Send + Sync + 'static> {
-    fn matcher_type(&self) -> MatchType {
-        self.as_ref()
-            .matcher_type()
-    }
-}
 /// Extension trait for adding AND/OR combinators to matchers
 pub trait AsyncMatcherExt<T>: TypedMatcher<T> + Sized + 'static
 where
-    T: Send + Sync + 'static,
+    T: AsyncShared + 'static,
 {
     /// Combines this matcher with another using AND logic
-    fn and<M>(self, matcher: M) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
+    fn and<M>(self, matcher: M) -> SharedTypedMatcher<T>
     where
-        M: TypedMatcher<T> + Send + Sync + 'static,
-        Self: Send + Sync,
+        M: AsyncTypedMatcher<T>,
+        Self: AsyncShared,
     {
-        and(vec![Arc::new(self), Arc::new(matcher)])
+        and(vec![SharedTypedMatcher::new(self), SharedTypedMatcher::new(matcher)])
     }
 
     /// Combines this matcher with another using OR logic
-    fn or<M>(self, matcher: M) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
+    fn or<M>(self, matcher: M) -> SharedTypedMatcher<T>
     where
-        M: TypedMatcher<T> + Send + Sync + 'static,
-        Self: Send + Sync,
+        M: AsyncTypedMatcher<T>,
+        Self: AsyncShared,
     {
-        or(vec![Arc::new(self), Arc::new(matcher)])
+        or(vec![SharedTypedMatcher::new(self), SharedTypedMatcher::new(matcher)])
     }
 }
 
 /// Implementation of AsyncMatcherExt for any type that implements TypedMatcher
 impl<M, T> AsyncMatcherExt<T> for M
 where
-    M: TypedMatcher<T> + Send + Sync + 'static,
-    T: Send + Sync + 'static,
+    M: AsyncTypedMatcher<T>,
+    T: AsyncShared + 'static,
 {
 }
 
@@ -443,7 +420,7 @@ impl Respond {
     }
 
     #[inline]
-    /// Get the status code
+    /// Get the status codeTypedMatcher<Request> + Send + Sync + 'static
     pub fn status_code(&self) -> &StatusCode {
         &self.status_code
     }

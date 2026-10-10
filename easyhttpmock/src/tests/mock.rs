@@ -9,7 +9,6 @@ use caramelo::{
     expect,
     matchers::{contains_key, eq, truthy},
     MatchType::ToHave,
-    Matcher,
 };
 use http::{Method, StatusCode, Uri};
 

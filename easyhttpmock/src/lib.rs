@@ -3,7 +3,12 @@
 use crate::{
     config::EasyHttpMockConfig, errors::EasyHttpMockError, mock::MockState, server::ServerAdapter,
 };
+use caramelo::{MatchType, Matcher, TypedMatcher};
 use std::ops::{Deref, DerefMut};
+#[cfg(feature = "single-threaded")]
+use std::rc::Rc;
+#[cfg(feature = "multi-threaded")]
+use std::sync::Arc;
 
 /// Configuration module
 pub mod config;
@@ -20,13 +25,155 @@ pub mod server;
 mod tests;
 
 /// Result type for HTTP mock operations
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// let result: HttpMockResult<()> = Ok(());
-/// ```
 pub type HttpMockResult<T> = Result<T, EasyHttpMockError>;
+
+#[cfg(feature = "multi-threaded")]
+/// Multi threaded typed matcher
+pub struct SharedTypedMatcher<T>(Arc<dyn TypedMatcher<T> + Send + Sync>);
+
+#[cfg(feature = "multi-threaded")]
+impl<T> Clone for SharedTypedMatcher<T> {
+    fn clone(&self) -> Self {
+        SharedTypedMatcher(self.0.clone())
+    }
+}
+
+#[cfg(feature = "multi-threaded")]
+impl<T> SharedTypedMatcher<T> {
+    /// Creates a shared typed matcher from any matcher implementation.
+    pub fn new<M>(matcher: M) -> Self
+    where
+        M: TypedMatcher<T> + Send + Sync + 'static,
+    {
+        Self(Arc::new(matcher))
+    }
+
+    /// Checks whether the wrapped matcher matches a value.
+    pub fn matches(&self, value: &T) -> bool {
+        self.0.matches(value)
+    }
+
+    /// Returns a human-readable description of the wrapped matcher.
+    pub fn description(&self) -> String {
+        self.0.description()
+    }
+
+    /// Returns the match type for the wrapped matcher.
+    pub fn matcher_type(&self) -> MatchType {
+        self.0.matcher_type()
+    }
+}
+
+#[cfg(feature = "multi-threaded")]
+impl<T> Matcher<T> for SharedTypedMatcher<T> {
+    fn matches(&self, value: &T) -> bool {
+        self.0.matches(value)
+    }
+
+    fn description(&self) -> String {
+        self.0.description()
+    }
+}
+
+#[cfg(feature = "multi-threaded")]
+impl<T> TypedMatcher<T> for SharedTypedMatcher<T> {
+    fn matcher_type(&self) -> MatchType {
+        self.0.matcher_type()
+    }
+}
+
+#[cfg(feature = "multi-threaded")]
+impl<T> AsRef<dyn TypedMatcher<T> + Send + Sync + 'static> for SharedTypedMatcher<T> {
+    fn as_ref(&self) -> &(dyn TypedMatcher<T> + Send + Sync + 'static) {
+        self.0.as_ref()
+    }
+}
+
+#[cfg(feature = "single-threaded")]
+/// Multi threaded typed matcher
+pub struct SharedTypedMatcher<T>(Rc<dyn TypedMatcher<T>>);
+
+#[cfg(feature = "single-threaded")]
+impl<T> Clone for SharedTypedMatcher<T> {
+    fn clone(&self) -> Self {
+        SharedTypedMatcher(self.0.clone())
+    }
+}
+
+#[cfg(feature = "single-threaded")]
+impl<T> SharedTypedMatcher<T> {
+    /// Creates a shared typed matcher from any matcher implementation.
+    pub fn new<M>(matcher: M) -> Self
+    where
+        M: TypedMatcher<T> + 'static,
+    {
+        Self(Rc::new(matcher))
+    }
+
+    /// Checks whether the wrapped matcher matches a value.
+    pub fn matches(&self, value: &T) -> bool {
+        self.0.matches(value)
+    }
+
+    /// Returns a human-readable description of the wrapped matcher.
+    pub fn description(&self) -> String {
+        self.0.description()
+    }
+
+    /// Returns the match type for the wrapped matcher.
+    pub fn matcher_type(&self) -> MatchType {
+        self.0.matcher_type()
+    }
+}
+
+#[cfg(feature = "single-threaded")]
+impl<T> Matcher<T> for SharedTypedMatcher<T> {
+    fn matches(&self, value: &T) -> bool {
+        self.0.matches(value)
+    }
+
+    fn description(&self) -> String {
+        self.0.description()
+    }
+}
+
+#[cfg(feature = "single-threaded")]
+impl<T> TypedMatcher<T> for SharedTypedMatcher<T> {
+    fn matcher_type(&self) -> MatchType {
+        self.0.matcher_type()
+    }
+}
+
+#[cfg(feature = "single-threaded")]
+impl<T> AsRef<dyn TypedMatcher<T> + 'static> for SharedTypedMatcher<T> {
+    fn as_ref(&self) -> &(dyn TypedMatcher<T> + 'static) {
+        self.0.as_ref()
+    }
+}
+
+#[cfg(feature = "multi-threaded")]
+/// Trait bounds alias for async typed matchers
+pub trait AsyncShared: Send + Sync {}
+#[cfg(feature = "multi-threaded")]
+impl<T> AsyncShared for T where T: Send + Sync {}
+
+#[cfg(feature = "single-threaded")]
+/// Trait bounds alias for async typed matchers
+pub trait AsyncShared {}
+#[cfg(feature = "single-threaded")]
+impl<T> AsyncShared for T {}
+
+#[cfg(feature = "multi-threaded")]
+/// Trait bounds alias for async typed matchers
+pub trait AsyncTypedMatcher<T>: TypedMatcher<T> + Send + Sync + 'static {}
+#[cfg(feature = "multi-threaded")]
+impl<T, M> AsyncTypedMatcher<M> for T where T: TypedMatcher<M> + Send + Sync + 'static {}
+
+#[cfg(feature = "single-threaded")]
+/// Trait bounds alias for async typed matchers
+pub trait AsyncTypedMatcher<T>: TypedMatcher<T> + 'static {}
+#[cfg(feature = "single-threaded")]
+impl<T, M> AsyncTypedMatcher<M> for T where T: TypedMatcher<M> + 'static {}
 
 /// Create a mock using a specific server implementation
 ///

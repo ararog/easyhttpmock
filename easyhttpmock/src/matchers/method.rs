@@ -1,6 +1,5 @@
-use crate::mock::Request;
+use crate::{SharedTypedMatcher, mock::Request};
 use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
-use std::sync::Arc;
 
 /// Trait for converting values into http::Method.
 pub trait AsMethod {
@@ -54,11 +53,11 @@ impl AsMethod for &str {
 ///
 /// let matcher = method("GET");
 /// ```
-pub fn method<M>(value: M) -> Arc<dyn TypedMatcher<Request> + Send + Sync + 'static>
+pub fn method<M>(value: M) -> SharedTypedMatcher<Request>
 where
     M: AsMethod,
 {
-    Arc::new(Method(value.into_method()))
+    SharedTypedMatcher::new(Method(value.into_method()))
 }
 
 #[derive(Clone)]

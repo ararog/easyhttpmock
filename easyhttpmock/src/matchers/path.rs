@@ -1,6 +1,5 @@
-use crate::mock::Request;
+use crate::{SharedTypedMatcher, mock::Request};
 use caramelo::{MatchType::ToHave, Matcher, TypedMatcher};
-use std::sync::Arc;
 
 /// Creates a matcher that checks if the request path matches the given regex pattern.
 ///
@@ -23,13 +22,10 @@ use std::sync::Arc;
 ///
 /// let matcher = path(r"^/api/v1/.*$");
 /// ```
-pub fn path<T>(value: &str) -> Arc<dyn TypedMatcher<T> + Send + Sync + 'static>
-where
-    Path: TypedMatcher<T>,
-{
+pub fn path(value: &str) -> SharedTypedMatcher<Request> {
     let regex = regex::Regex::new(value);
     match regex {
-        Ok(regex) => Arc::new(Path(regex)),
+        Ok(regex) => SharedTypedMatcher::new(Path(regex)),
         Err(_) => panic!("Invalid regex pattern"),
     }
 }
@@ -54,7 +50,9 @@ where
 /// ```
 pub struct Path(regex::Regex);
 
+#[cfg(feature = "multi-threaded")]
 unsafe impl Send for Path {}
+#[cfg(feature = "multi-threaded")]
 unsafe impl Sync for Path {}
 
 impl Matcher<Request> for Path {
